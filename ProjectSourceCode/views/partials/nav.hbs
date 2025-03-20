@@ -1,0 +1,52 @@
+<header>
+  <nav class="navbar navbar-expand-sm border-bottom">
+    <div class="container">
+      <!-- site name on our left -->
+      <a class="navbar-brand" href="/">Fridge Fusion</a>
+      
+      <button
+        <!-- I made it mobile friendly for accessibility -->
+        class="navbar-toggler ms-auto"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbar-collapse"
+        aria-controls="navbar"
+        aria-expanded="false"
+        aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      
+      <div class="collapse navbar-collapse" id="navbar-collapse">
+        <!-- for the design, we chose to put navigation items on the right -->
+        <!-- None of these paths for href are final! We don't have the .js for it quite yet.
+        Expect it to change once the page is implemented.-->
+        <ul class="navbar-nav me-3">
+          <li class="nav-item">
+            <a class="nav-link" href="/myFridge">My Fridge</a>
+          </li>
+        </ul>
+        
+        <div class="nav-item me-3">
+          <a class="nav-link" href="/recipes">Recipes</a>
+        </div>
+        
+        <div class="nav-item me-3">
+          <a class="nav-link" href="/friends">Friends</a>
+        </div>
+        
+        <!-- pfp, we still need to discuss what we want this to do/if we want photos with the group
+        so this is largely just a placeholder for now -->
+        <div class="nav-item">
+          <a class="nav-link" href="/profile">
+            {{#if user}}
+              <img src="{{user.profilePicture}}" alt="Profile" class="rounded-circle" width="30" height="30">
+            {{else}}
+            <!-- just for before the log in -->
+              <i class="bi bi-person-circle fs-5"></i>
+            {{/if}}
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
