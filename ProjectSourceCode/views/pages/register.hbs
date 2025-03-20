@@ -1,0 +1,18 @@
+{{>message}}
+<div style="margin: auto">
+    <form action="/register" method="POST">
+        <h1>Register:</h1>
+        <div>
+            <label for="username">Username: </label>
+            <input id="username" name="username" required>
+        </div>
+        <div>
+            <label for="password">Password: </label>
+            <input id="password" name="password" required>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">Register</button>
+        </div>
+    </form>
+    <p>Already have an account?</p><a href="/login">Login</a>
+</div>
