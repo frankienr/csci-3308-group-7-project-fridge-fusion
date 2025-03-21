@@ -1,0 +1,16 @@
+﻿* Frankie:
+   * Done: wireframes, start of the pages
+   * To do: refine pages and make sure they all work
+* Hanna:
+   * Done: user stories, users part of document, outline of partials, dependencies
+   * To do: test partials, ReadMe, docker-compose.yaml
+* Rodrigo:
+   * Done: Set up index.js
+   * To do: add to index.js
+* Robert:
+   * Done: use case diagrams, set up spoonacular API
+   * To do: get API to work
+* As a team:
+   * Add everything into the board
+   * Next week have some form of UI to look at
+   * Pick people to take notes- add to the board
