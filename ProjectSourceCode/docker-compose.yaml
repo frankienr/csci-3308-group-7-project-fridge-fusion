@@ -10,6 +10,7 @@ services:
   web:
     image: node:lts
     user: 'node'
+    env_file: .env
     working_dir: /home/node/app
     environment:
       - NODE_ENV=development
