@@ -1,29 +1,89 @@
 <div class="container-fluid">
-    <div class="row">
-        <!-- Left Panel -->
-        <div class="col-md-6 left-panel">
-        <h1>My Ingredients</h1>
-        <ul class="list-group">
-            {{#each ingredients}}
-            {{!-- ingredients is a list holding each ingredient --}}
+        <div class="row">
+            <!-- Left Panel -->
+            <div class="col-md-6 left-panel">
+            <h1>My Ingredients</h1>
+            <ul class="list-group">
+                {{#each ingredients}}
+                <!-- ingredients is a list holding each ingredient -->
+                <!-- this is what will actually be used -->
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        {{this}}
+                        <form action="/fridge/delete" method="POST">
+                            <button class="btn btn-primary" type="submit">Remove</button>
+                            <input type="hidden" name="ingredient" value={{this}}></input>
+                        </form>                    
+                    </li>
+                {{/each}}
+
+
+                <!-- this is to just show some for now -->
                 <li class="list-group-item d-flex justify-content-between align-items-center">
-                    {{this}}
+                    Broccoli
                     <form action="/fridge/delete" method="POST">
                         <button class="btn btn-primary" type="submit">Remove</button>
                         <input type="hidden" name="ingredient" value={{this}}></input>
                     </form>                    
                 </li>
-            {{/each}}
-        </ul>
-        </div>
-    
-        <!-- Right Panel -->
-        <div class="col-md-6 right-panel">
-        <h1>Add more ingredients:</h1>
-        <form>
-            <input name="new_ingredient"></input>
-            <button class="btn btn-primary" type="submit">Add</button>
-        </form>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Pasta
+                    <form action="/fridge/delete" method="POST">
+                        <button class="btn btn-primary" type="submit">Remove</button>
+                        <input type="hidden" name="ingredient" value={{this}}></input>
+                    </form>                    
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Carrots
+                    <form action="/fridge/delete" method="POST">
+                        <button class="btn btn-primary" type="submit">Remove</button>
+                        <input type="hidden" name="ingredient" value={{this}}></input>
+                    </form>                    
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Tomatoes
+                    <form action="/fridge/delete" method="POST">
+                        <button class="btn btn-primary" type="submit">Remove</button>
+                        <input type="hidden" name="ingredient" value={{this}}></input>
+                    </form>                    
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Olive Oil
+                    <form action="/fridge/delete" method="POST">
+                        <button class="btn btn-primary" type="submit">Remove</button>
+                        <input type="hidden" name="ingredient" value={{this}}></input>
+                    </form>                    
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    White Rice
+                    <form action="/fridge/delete" method="POST">
+                        <button class="btn btn-primary" type="submit">Remove</button>
+                        <input type="hidden" name="ingredient" value={{this}}></input>
+                    </form>                    
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    Garlic
+                    <form action="/fridge/delete" method="POST">
+                        <button class="btn btn-primary" type="submit">Remove</button>
+                        <input type="hidden" name="ingredient" value={{this}}></input>
+                    </form>                    
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    White Onion
+                    <form action="/fridge/delete" method="POST">
+                        <button class="btn btn-primary" type="submit">Remove</button>
+                        <input type="hidden" name="ingredient" value={{this}}></input>
+                    </form>                    
+                </li>
+            </ul>
+            </div>
+        
+            <!-- Right Panel -->
+            <div class="col-md-6 right-panel">
+            <h1>Add more ingredients:</h1>
+            <form>
+                <input name="new_ingredient" class="form-control"></input>
+                <button class="btn btn-primary" type="submit">Add</button>
+            </form>
+            </div>
         </div>
     </div>
-</div>
