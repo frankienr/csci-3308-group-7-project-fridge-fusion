@@ -63,10 +63,7 @@ app.use(
 
 // Authentication Middleware.
 const auth = (req, res, next) => {
-  if (req.url == "/welcome"){
-    next()
-  }
-  if (!req.session.user) {
+  if (!req.session.user && req.url != "/login" && req.url != "/register" && req.url != "/welcome") {
     // Default to login page.
     return res.redirect('/login');
   }
