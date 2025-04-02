@@ -1,8 +1,5 @@
 # Dependency directories
 node_modules/
 
-# dotenv environemnt variables file
-.env
-
 # Package lock
 package-lock.json

@@ -28,7 +28,7 @@ const dbConfig = {
     password: process.env.POSTGRES_PASSWORD,
   };
 
-  const db = pgp(dbConfig);
+const db = pgp(dbConfig);
 
 // connect to database  
 db.connect()
@@ -48,22 +48,22 @@ app.use(bodyParser.json());
 
 // initialize session variables
 app.use(
-    session({
-      secret: process.env.SESSION_SECRET,
-      saveUninitialized: false,
-      resave: false,
-    })
-  );
+  session({
+    secret: process.env.SESSION_SECRET,
+    saveUninitialized: false,
+    resave: false,
+  })
+);
   
-  app.use(
-    bodyParser.urlencoded({
-      extended: true,
-    })
-  );
+app.use(
+  bodyParser.urlencoded({
+    extended: true,
+  })
+);
 
 /////////////// ROUTES /////////////// 
 app.get('/', (req, res) => {
-    //home page
+    res.redirect("/login")
 });
 
 app.get('/login', (req, res) => {
