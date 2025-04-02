@@ -1,5 +1,5 @@
 {
-  "name": "web-services",
+  "name": "fridge-fusion",
   "main": "index.js",
   "dependencies": {
     "axios": "^1.1.3",
