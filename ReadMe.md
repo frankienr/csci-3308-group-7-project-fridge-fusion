@@ -40,7 +40,7 @@ Before running the application, ensure you have the following installed on your 
 ## 🚀 Running the Application Locally
 1. **Clone the Repository**  
    ```sh
-   git clone https://github.com/your-username/fridge-fusion.git
+   git clone https://github.com/frankienr/csci-3308-group-7-project-fridge-fusion.git
    cd fridge-fusion```
 
 2. **Install Dependencies**
@@ -50,6 +50,8 @@ Before running the application, ensure you have the following installed on your 
 [ADD ENV]
 
 4. **Start the Application**
+Docker Compose Up
+Go to http://localhost:3000/
 [ADD INSTRUCTIONS]
 
 ## 🧪 Running Tests
