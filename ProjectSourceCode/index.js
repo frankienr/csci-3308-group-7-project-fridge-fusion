@@ -61,6 +61,33 @@ app.use(
   })
 );
 
+// Authentication Middleware.
+const auth = (req, res, next) => {
+  if (!req.session.user && req.url != "/login" && req.url != "/register" && req.url != "/welcome") {
+    // Default to login page.
+    return res.redirect('/login');
+  }
+  next();
+};
+
+// Authentication Required
+app.use(auth);
+
+app.get('/profile', (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).send('Not authenticated');
+  }
+  try {
+    res.status(200).json({
+      username: req.session.user.username,
+    });
+  } catch (err) {
+    console.error('Profile error:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
 /////////////// ROUTES /////////////// 
 app.get('/', (req, res) => {
     res.redirect("/login")
@@ -201,7 +228,15 @@ async function pullSpoonacularAPIByQuery(queryString){
     }
   }
 }
+// Testing route
+
+app.get('/welcome', (req, res) => {
+  
+  res.json({status: 'success', message: 'Welcome!'});
+});
+
 
 // Start the server
-app.listen(3000);
+module.exports = app.listen(3000);
+
 console.log('Server is listening on port 3000');

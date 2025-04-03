@@ -1,0 +1,4 @@
+﻿* Hanna: readMe by tomorrow night
+* Robert: work on getting docker to work and pushing that version (done) and create way to restore db
+* Frankie: getting pages to render from index.js
+* Rodrigo: ?

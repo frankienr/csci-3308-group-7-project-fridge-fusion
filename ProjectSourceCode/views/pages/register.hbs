@@ -1,18 +1,30 @@
 {{>message}}
 <div style="margin: auto">
     <form action="/register" method="POST">
-        <h1>Register:</h1>
+        <h1>Register</h1>
+        <div>
+            <label for="first_name">First Name: </label>
+            <input id="first_name" class="form-control" name="first_name" placeholder="Enter first name" required>
+        </div>
+        <div>
+            <label for="last_name">Last Name: </label>
+            <input id="last_name" class="form-control" name="last_name" placeholder="Enter last name" required>
+        </div>
+        <div>
+            <label for="email">Email: </label>
+            <input id="email" class="form-control" name="email" placeholder="Enter email" required>
+        </div>
         <div>
             <label for="username">Username: </label>
-            <input id="username" name="username" required>
+            <input id="username" class="form-control" name="username" placeholder="Enter username" required>
         </div>
         <div>
             <label for="password">Password: </label>
-            <input id="password" name="password" required>
+            <input id="password" class="form-control" name="password" placeholder="Enter password" required>
         </div>
         <div>
             <button type="submit" class="btn btn-primary">Register</button>
         </div>
     </form>
-    <p>Already have an account?</p><a href="/login">Login</a>
+    <p>Already have an account? <a href="/login">Login</a></p>
 </div>

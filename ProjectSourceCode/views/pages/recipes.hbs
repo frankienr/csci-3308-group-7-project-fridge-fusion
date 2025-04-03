@@ -1,34 +1,86 @@
 <div class="container-fluid">
-        <div class="row align-items-center">
-            <!-- Left Panel -->
-            <div class="col-md-8 left-panel">
-            <h1>Available Recipes</h1>
-            <ul class="list-group">
-                {{#each recipes}}
-                {{!-- recipes is a list holding each recipe --}}
-                    <!-- Recipe Card -->
-                <div class="card mb-3">
-                    <div class="row g-0">
-                    <div class="col-auto">
-                        <img src={{this.image}} class="img-fluid rounded-start" alt={{this.name}}>
-                    </div>
-                    <div class="col">
-                        <div class="card-body">
-                        <h5 class="card-title">{{this.name}}</h5>
-                        <p class="card-text text-muted mb-1"><i class="bi-clock"></i>{{this.time}} minutes</p>
-                        <p class="card-text mb-0"><strong>Ingredients:</strong>{{this.ingredients}}</p>
-                        </div>
-                    </div>
-                    </div>
-                </div>
-                {{/each}}
-            </ul>
+<div class="row align-items-center">
+    <!-- Left Panel -->
+    <div class="col-md-8 left-panel">
+    <h1>Available Recipes</h1>
+    <ul class="list-group">
+        {{#each recipes}}
+        <!-- recipes is a list holding each recipe -->
+        <!-- this will be what we really use but i want to add an example-->
+            <!-- Recipe Card -->
+        <div class="card mb-3">
+            <div class="row g-0">
+            <div class="col-auto">
+                <img src={{this.image}} class="img-fluid" alt={{this.title}}>
             </div>
-        
-            <!-- Right Panel -->
-            <div class="col-md-4 justify-content-center align-items-center">
-            <h1>Want more options:</h1>
-            <button class="btn btn-primary">Fuse with Friends</button>
+            <div class="col">
+                <div class="card-body">
+                <h5 class="card-title">{{this.title}}</h5>
+                <p class="card-text text-muted mb-1"><i class="bi-clock"></i>{{this.readyInMinutes}} minutes</p>
+                <p class="card-text mb-0"><strong>Ingredients: </strong>{{this.ingredients}}</p>
+                <a href={{this.source.Url}} class="stretched-link"></a>
+
+            </div>
+            </div>
             </div>
         </div>
+        {{/each}}
+
+
+        <!-- examples to delete later -->
+        <div class="card mb-3">
+            <div class="row g-0">
+            <div class="col-auto">
+                <img src="https://img.spoonacular.com/recipes/715415-312x231.jpg" class="img-fluid" alt="Red Lentil Soup with Chicken and Turnips">
+            </div>
+            <div class="col">
+                <div class="card-body">
+                <h5 class="card-title">Red Lentil Soup with Chicken and Turnips</h5>
+                <p class="card-text text-muted mb-1"><i class="bi-clock"></i>55 minutes</p>
+                <p class="card-text mb-0"><strong>Ingredients: </strong>avacado, carrots, celery sticks, cooked chicken breast, flat leaf parsley, garlic, olive oil, canned tomatoes, dried red lentils, salt and pepper, turnip, vegetable stock, yellow onion</p>
+                <a href="https://www.pinkwhen.com/red-lentil-soup-with-chicken-and-turnips/" class="stretched-link"></a>
+            </div>
+            </div>
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="row g-0">
+            <div class="col-auto">
+                <img src="https://img.spoonacular.com/recipes/715415-312x231.jpg" class="img-fluid" alt="Red Lentil Soup with Chicken and Turnips">
+            </div>
+            <div class="col">
+                <div class="card-body">
+                <h5 class="card-title">Red Lentil Soup with Chicken and Turnips</h5>
+                <p class="card-text text-muted mb-1"><i class="bi-clock"></i>55 minutes</p>
+                <p class="card-text mb-0"><strong>Ingredients: </strong>avacado, carrots, celery sticks, cooked chicken breast, flat leaf parsley, garlic, olive oil, canned tomatoes, dried red lentils, salt and pepper, turnip, vegetable stock, yellow onion</p>
+                <a href="https://www.pinkwhen.com/red-lentil-soup-with-chicken-and-turnips/" class="stretched-link"></a>
+                </div>
+            </div>
+            </div>
+        </div>
+        <div class="card mb-3">
+            <div class="row g-0">
+            <div class="col-auto">
+                <img src="https://img.spoonacular.com/recipes/715415-312x231.jpg" class="img-fluid" alt="Red Lentil Soup with Chicken and Turnips">
+            </div>
+            <div class="col">
+                <div class="card-body">
+                <h5 class="card-title">Red Lentil Soup with Chicken and Turnips</h5>
+                <p class="card-text text-muted mb-1"><i class="bi-clock"></i>55 minutes</p>
+                <p class="card-text mb-0"><strong>Ingredients: </strong>avacado, carrots, celery sticks, cooked chicken breast, flat leaf parsley, garlic, olive oil, canned tomatoes, dried red lentils, salt and pepper, turnip, vegetable stock, yellow onion</p>
+                <a href="https://www.pinkwhen.com/red-lentil-soup-with-chicken-and-turnips/" class="stretched-link"></a>
+            </div>
+        </div>
+        </div>
     </div>
+        
+    </ul>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="col-md-4 align-self-start">
+        <h1>Want more options:</h1>
+        <button class="btn btn-primary">Fuse with Friends</button>
+    </div>
+</div>
+</div>
