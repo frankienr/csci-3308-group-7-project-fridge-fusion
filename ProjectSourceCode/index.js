@@ -150,8 +150,8 @@ async function pullSpoonacularAPIByQuery(queryString){
 
     // Construct the recipe insertion query
 
-    let insertRecipeQueryStart = "INSERT INTO recipes (recipe_name, ready_time_minutes, recipe_link) VALUES "
-    let insertRecipeQueryMiddle = `('${item.title}', ${item.readyInMinutes}, '${item.image}')`
+    let insertRecipeQueryStart = "INSERT INTO recipes (recipe_name, ready_time_minutes, recipe_link, recipe_image) VALUES "
+    let insertRecipeQueryMiddle = `('${item.title}', ${item.readyInMinutes}, '${item.sourceUrl}', '${item.image}')`
     let insertRecipeQueryEnd = " ON CONFLICT (recipe_name) DO NOTHING RETURNING recipe_id" // Same reason as above, in case a duplicate recipe name ends up getting inserted.
 
     let insertRecipeQuery = insertRecipeQueryStart + insertRecipeQueryMiddle + insertRecipeQueryEnd
@@ -202,8 +202,7 @@ async function pullSpoonacularAPIByQuery(queryString){
   }
 }
 
-// Currentlly testing
-
+pullSpoonacularAPIByQuery('pasta')
 //What other pages will we have?
 
 // Start the server
