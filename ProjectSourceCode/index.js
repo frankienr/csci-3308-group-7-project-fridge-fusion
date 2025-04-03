@@ -87,34 +87,42 @@ app.post('/register', async (req, res) => {
 // This function searched Spoonacular for the given query string, then inserts all found recipes into the local tables.
 async function pullSpoonacularAPIByQuery(queryString){
   const apiKey = process.env.SPOONACULAR_API_KEY
-  const params = {
-    "query" : queryString,
-    "addRecipeInformation" : true,
-    "addRecipeInstructions" : true,
-    "fillIngredients" : true 
-  }
 
   let foundRecipes = null
 
-  console.log("Fetching Spoonacular recipes.")
+  console.log(apiKey)
 
-  axios.get('https://api.spoonacular.com/recipes/complexSearch', {
-    headers: {
+  console.log("Fetching Spoonacular recipes.")
+  try{
+    const response = await axios.get('https://api.spoonacular.com/recipes/complexSearch', {
+      headers: {
         "x-api-key": apiKey
-    },
-    "params": params
-  }).then(function (response) {
-    foundRecipes = response
-  })
-  .catch(function (error) {
+      },
+      "params": {
+        "query" : queryString,
+        "addRecipeInformation" : true,
+        "fillIngredients" : true 
+      }
+    })
+    foundRecipes = response.data
+  }
+  catch{
     console.log("Error fetching Spoonacular data. See log below: ")
     console.log(error);
     return error
-  });
+  }    
+
+  if (foundRecipes == null){
+    console.log("Error fetching Spoonacular data")
+    return
+  }
+
+
   console.log("Successfully pulled Spoonacular data, inserting into DB...")
   // Iterates through all of the returned recipes, and grabs the appropriate data to insert.
-  for(item in results.results){ 
+  for(index in foundRecipes.results){ 
 
+    let item = foundRecipes.results[index]
 
     // Construct the ingredient insertion query and ingredient ID fetch query
 
@@ -122,49 +130,44 @@ async function pullSpoonacularAPIByQuery(queryString){
     let insertIngredientsQueryMiddle = ""
     
     // Use CONFLICT DO NOTHING for inserting ingredients so that it does not scream about duplicate ingredients.
-    let insertIngredientsQueryEnd = " ON CONFLICT DO NOTHING"
+    let insertIngredientsQueryEnd = " ON CONFLICT (ingredient_name) DO NOTHING"
 
 
     // Iterates throught the extended ingredients, gets the clean names, and adds them to both the insert query and the
     // ID fetch query.
     for (ingredient in item.extendedIngredients){
       let name = ingredient.nameClean
-      if (insertIngredientsQuery == ""){
-        insertIngredientsQuery = `('${name}')`
+      if (insertIngredientsQueryMiddle == ""){
+        insertIngredientsQueryMiddle = `('${name}')`
       }
       else{
-        insertIngredientsQuery += `, ('${name}')`
+        insertIngredientsQueryMiddle += `, ('${name}')`
       }
     }
 
     let insertIngredientsQuery = insertIngredientsQueryStart + insertIngredientsQueryMiddle + insertIngredientsQueryEnd
-    let selectRecipeIngredientIDs = selectRecipeIngredientIDsStart + selectRecipeIngredientIDsMiddle
 
 
     // Construct the recipe insertion query
 
-    let insertRecipeQueryStart = "INSERT INTO recipes (recipe_name, recipe_time_minutes, recipe_link) VALUES "
-    let insertRecipeQueryMiddle = `('${item.title}', '${item.readyInMinutes}', '${item.image}')`
-    let insertRecipeQueryEnd = "RETURNING recipe_id ON CONFLICT DO NOTHING" // Same reason as above, in case a duplicate recipe name ends up getting inserted.
+    let insertRecipeQueryStart = "INSERT INTO recipes (recipe_name, ready_time_minutes, recipe_link) VALUES "
+    let insertRecipeQueryMiddle = `('${item.title}', ${item.readyInMinutes}, '${item.image}')`
+    let insertRecipeQueryEnd = " ON CONFLICT (recipe_name) DO NOTHING RETURNING recipe_id" // Same reason as above, in case a duplicate recipe name ends up getting inserted.
 
     let insertRecipeQuery = insertRecipeQueryStart + insertRecipeQueryMiddle + insertRecipeQueryEnd
-
-    // Construct the recipe-ingredient linking query.
-
-
-
-    let linkRecipeIngredientsStart = "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, ingredient_unit, ingredient_unit_quantity) VALUES "
-    let linkRecipeIngredientsMiddle = "" // This will get set after the recipe and ingredient_ids are known.
-    let linkRecipeIngredientsEnd = " " // No ignore conflict, because if the recipe insert returns nothing, this should not even run to begin with. 
-
-
 
 
     try {
       // use task to execute multiple queries
       const results = await db.task(async t => {
-        const insertedIngredientIDs = await t.any(insertIngredientsQuery);
-        const insertedRecipeID = await t.one(insertRecipeQuery);
+        if(insertIngredientsQueryMiddle == ""){
+          console.log("No ingredients to insert, continuing...")
+        }
+        else{
+          console.log("Successfully inserted ingredients.")
+          const insertedIngredientIDs = await t.any(insertIngredientsQuery);
+        }
+        const insertedRecipeID = await t.any(insertRecipeQuery);
 
 
         let recipeID = null
@@ -182,18 +185,15 @@ async function pullSpoonacularAPIByQuery(queryString){
             let unit = ingredient.unit
             let amount = ingredient.amount
             const ingredientID = await t.one(`SELECT ingredient_id FROM ingredients WHERE ingredient_name='${name}'`)
-
-
+            // Specifically using t.one because this should ALWAYS WORK BECAUSE THE RECIPE WAS FRESHLY INSERTED.
+            const linkRecipeIngredients = await t.one(`INSERT INTO recipe_ingredients (recipe_id, ingredient_id, ingredient_unit, ingredient_unit_quantity) VALUES (${recipeID}, ${ingredientID}, '${unit}', ${amount})`)
           }
+          console.log(`Successfully inserted recipe ${item.title} into table!`)
+        }
+        else{
+          console.log(`Recipe ${item.title} already exists, skipping.`)
         }
 
-
-        const linkRecipeSuccess = await t.any(linkRecipeIngredients)
-        res.status(200).json({
-          query1results: insertIngredientsSuccess,
-          query2results: insertRecipesSuccess,
-          query3results: linkRecipeSuccess
-      });
       });
     } catch (err) {
       console.log(err)
@@ -201,8 +201,6 @@ async function pullSpoonacularAPIByQuery(queryString){
     }
   }
 }
-
-// pullSpoonacularAPIByQuery("pasta")
 
 // Currentlly testing
 
