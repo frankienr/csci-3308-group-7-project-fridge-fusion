@@ -1,0 +1,16 @@
+﻿* Hanna
+   * Done: ReadMe file, worked on prettiying up pages
+   * To do: Work on populating index.js
+* Rodrigo
+   * Done: helped trouble shooting, index.js
+   * To do: work on SQL, work on index.js, login/register routes
+* Robert
+   * Done: Database side, set up API, table relations, 
+   * To Do: Link it to front end, update query to match table formats
+* Frankie
+   * Done: worked on pages as well, worked on trouble shooting
+   * To do: work on my fridge and recipes pages
+* General to dos:
+   * Release notes for this week - Hanna        
+      * What is currently in the repo 
+      * Do before each TA meeting
