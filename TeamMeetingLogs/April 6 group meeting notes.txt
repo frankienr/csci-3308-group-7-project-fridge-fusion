@@ -1,0 +1,29 @@
+﻿* Try to do as much as possible before wednesday lab:
+* In app.get(‘/fridge’…. To pass in ‘seen_ingreds’ which is a list of the ingredients in our database. so just need the query and then to pass in in res.render. also ‘ingredients’ needs to be the ingredients already in the users fridge
+   * Robert
+* App.post(‘/addingredient’) that adds the ingredient in new_ingredient to the users fridge
+   * Pop-up - frankie
+   * Robert- rest of code for that
+* The method for the delete buttons for each ingredient
+   * Hanna
+* In get.app(/recipes) we need to pass in a variable called ‘recipes’ that are the available recipes for the user. Right now I have things set up to access the link, photo, etc but I guessed on the set up and what things are called
+   * Robert
+* Test login and register
+   * Rodrigo
+* Need logout
+   * Rodrigo
+* Profile page needs first_name last_name username and email
+   * Hanna
+* Create some fake users/data
+   * Robert
+* Home page
+   * Frankie
+* Test cases for the above situations:
+   * Make sure nothing is returning errors
+   * Hanna
+
+
+* Later tasks:
+* Add get.app for friends page, need ‘friends’ to be the list of the users friends. first_name, last_name, and username for each
+* Add post addfriend
+* Add delete friend
