@@ -4,8 +4,8 @@
       <!-- site name on our left -->
       <a class="navbar-brand" href="/">Fridge Fusion</a>
       
+      <!-- I made it mobile friendly for accessibility -->
       <button
-        <!-- I made it mobile friendly for accessibility -->
         class="navbar-toggler ms-auto"
         type="button"
         data-bs-toggle="collapse"
@@ -20,33 +20,44 @@
         <!-- for the design, we chose to put navigation items on the right -->
         <!-- None of these paths for href are final! We don't have the .js for it quite yet.
         Expect it to change once the page is implemented.-->
-        <ul class="navbar-nav me-3">
-          <li class="nav-item">
-            <a class="nav-link" href="/myFridge">My Fridge</a>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item me-3">
+            <a class="nav-link" href="/fridge">My Fridge</a>
+          </li>
+          <li class="nav-item me-3">
+            <a class="nav-link" href="/recipes">Recipes</a>
+          </li>
+          <li class="nav-item me-3">
+            <a class="nav-link" href="/friends">Friends</a>
+          </li>
+          <li class="nav-item me-3">
+            <a class="nav-link" href="/profile">Profile</a>
           </li>
         </ul>
-        
-        <div class="nav-item me-3">
-          <a class="nav-link" href="/recipes">Recipes</a>
-        </div>
-        
-        <div class="nav-item me-3">
-          <a class="nav-link" href="/friends">Friends</a>
-        </div>
-        
-        <!-- pfp, we still need to discuss what we want this to do/if we want photos with the group
-        so this is largely just a placeholder for now -->
-        <div class="nav-item">
-          <a class="nav-link" href="/profile">
-            {{#if user}}
-              <img src="{{user.profilePicture}}" alt="Profile" class="rounded-circle" width="30" height="30">
-            {{else}}
-            <!-- just for before the log in -->
-              <i class="bi bi-person-circle fs-5"></i>
-            {{/if}}
-          </a>
-        </div>
       </div>
     </div>
   </nav>
 </header>
+
+<style>
+  .nav-link {
+    position: relative;
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+  .nav-link:hover {
+    color: #17a2b8 !important;
+  }
+  .nav-link.active {
+    color: #17a2b8 !important;
+  }
+  .nav-link.active:after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    bottom: -1px;
+    left: 0;
+    background-color: #17a2b8;
+  }
+</style>
