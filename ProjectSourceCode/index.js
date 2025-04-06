@@ -98,7 +98,32 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-    //login page
+    const username = req.body.username;
+    const password = req.body.password;
+  
+    if(!username || !password){
+      return res.status(400).json({ error: 'Username and password are required'});
+    }
+  
+    // edit line below to match our database
+    const result = await db.query(`SELECT * FROM users WHERE username = $1;`, [username]); 
+  
+    if(!result[0]){
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+  
+    const user = result[0];
+  
+    const match = await bcrypt.compare(req.body.password, user.password);
+  
+    if(!match){
+      return res.status(401).json({ error: 'Invalid username or password' });
+    }
+  
+    req.session.user = user;
+    req.session.save();
+  
+    res.redirect('/profile');
 });
 
 app.get('/register', (req, res) => {
@@ -106,8 +131,59 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    //register page
+    try {
+        const username = req.body.username;
+        const password = req.body.password;
+        const confirm_password = req.body.confirm_password;
+        const email = req.body.email;
+        
+        if (!username || !password || !confirm_password || !email) {
+          return res.status(400).json({ error: 'Complete all required fields' });
+        }
+        
+        if(password != confirm_password){
+          return res.status(400).json( { error : "Passwords don't macth" });
+        }
+
+        // Hash the password using bcrypt
+        const hash = await bcrypt.hash(password, 10);
+    
+        // Insert username and hashed password into the 'users' table
+        // edit line below to match our database
+        await db.query('INSERT INTO users(username, password) VALUES ($1, $2);', [username, hash]);
+    
+        res.redirect('/login');
+      } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
 });
+
+
+app.get('/fridge', async (req, res) => {
+    if(!req.session.user){
+      return res.redirect('/login');
+    }
+
+    res.render('pages/fridge');
+});
+
+app.get('/profile', async (req, res) => {
+    if(!req.session.user){
+      return res.redirect('/login');
+    }
+
+    res.render('pages/profile');
+});
+
+app.get('/recipes', async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }  
+  
+  res.render('pages/recipes');
+});
+//What other pages will we have?
 
 
 
