@@ -1,14 +1,17 @@
 <div class="container-fluid">
-<div class="row align-items-center">
+<div class="row">
     <!-- Left Panel -->
-    <div class="col-md-8 left-panel">
-    <h1>Available Recipes</h1>
+    <div class="col-md-8 left-panel py-3">
+        <div class="card rounded-lg">
+            <div class="card-header bg-fridge text-white text-center py-3">
+                <h3>Available recipes</h3>
+            </div>
     <ul class="list-group">
         {{#each recipes}}
         <!-- recipes is a list holding each recipe -->
         <!-- this will be what we really use but i want to add an example-->
             <!-- Recipe Card -->
-        <div class="card mb-3">
+        <div class="card mt-1 border-0">
             <div class="row g-0">
             <div class="col-auto">
                 <img src={{this.image}} class="img-fluid" alt={{this.title}}>
@@ -28,7 +31,7 @@
 
 
         <!-- examples to delete later -->
-        <div class="card mb-3">
+        <div class="card mt-1 border-0">
             <div class="row g-0">
             <div class="col-auto">
                 <img src="https://img.spoonacular.com/recipes/715415-312x231.jpg" class="img-fluid" alt="Red Lentil Soup with Chicken and Turnips">
@@ -43,7 +46,7 @@
             </div>
             </div>
         </div>
-        <div class="card mb-3">
+        <div class="card mt-1 border-0">
             <div class="row g-0">
             <div class="col-auto">
                 <img src="https://img.spoonacular.com/recipes/715415-312x231.jpg" class="img-fluid" alt="Red Lentil Soup with Chicken and Turnips">
@@ -58,7 +61,7 @@
             </div>
             </div>
         </div>
-        <div class="card mb-3">
+        <div class="card mt-1 border-0">
             <div class="row g-0">
             <div class="col-auto">
                 <img src="https://img.spoonacular.com/recipes/715415-312x231.jpg" class="img-fluid" alt="Red Lentil Soup with Chicken and Turnips">
@@ -76,11 +79,18 @@
         
     </ul>
     </div>
+    </div>
 
     <!-- Right Panel -->
-    <div class="col-md-4 align-self-start">
-        <h1>Want more options:</h1>
-        <button class="btn btn-primary">Fuse with Friends</button>
+    <div class="col-md-4 right-panel py-3">
+        <div class="card rounded-lg">
+            <div class="card-header bg-fridge text-white text-center py-3">
+                <h3>Want more options:</h3>
+            </div>
+            <div class="card-body p-4 d-flex justify-content-center">
+                <button class="btn btn-danger">Fuse with Friends</button>
+            </div>
+        </div>
     </div>
 </div>
 </div>

@@ -1,49 +1,55 @@
 {{>message}}
-<div class="container py-5">
+<div class="container py-5 bg-fridge-light">
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-5">
-      <div class="card shadow-sm border-0 rounded-lg">
-        <div class="card-header bg-primary text-white text-center py-3">
+      <div class="card rounded-lg">
+        <div class="card-header bg-fridge text-white text-center py-3">
           <h3>Register</h3>
         </div>
-        <div class="card-body p-4">
+        <div class="card-body p-3">
           <form action="/register" method="POST">
-            <div class="row mb-3">
+            <div class="row mb-2">
               <div class="col-md-6">
                 <label for="first_name" class="form-label small text-muted">First Name</label>
-                <input id="first_name" class="form-control form-control-lg" name="first_name" placeholder="Enter first name" required>
+                <input id="first_name" class="form-control form-control" name="first_name" placeholder="Enter first name" required>
               </div>
               <div class="col-md-6">
                 <label for="last_name" class="form-label small text-muted">Last Name</label>
-                <input id="last_name" class="form-control form-control-lg" name="last_name" placeholder="Enter last name" required>
+                <input id="last_name" class="form-control form-control" name="last_name" placeholder="Enter last name" required>
               </div>
             </div>
-            <div class="mb-3">
+            <div class="mb-2">
               <label for="email" class="form-label small text-muted">Email Address</label>
               <div class="input-group">
-                <input type="email" id="email" class="form-control form-control-lg" name="email" placeholder="Enter email" required>
+                <input type="email" id="email" class="form-control form-control" name="email" placeholder="Enter email" required>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label for="username" class="form-label small text-muted">Username</label>
+              <div class="input-group">
+                <input id="username" class="form-control form-control" name="username" placeholder="Create username" required>
+              </div>
+            </div>
+            <div class="mb-2">
+              <label for="password" class="form-label small text-muted">Password</label>
+              <div class="input-group">
+                <input type="password" id="password" class="form-control form-control" name="password" placeholder="Create password" required>
               </div>
             </div>
             <div class="mb-3">
-              <label for="username" class="form-label small text-muted">Username</label>
+              <label for="confirm_password" class="form-label small text-muted">Confirm password</label>
               <div class="input-group">
-                <input id="username" class="form-control form-control-lg" name="username" placeholder="Create username" required>
+                <input type="confirm_password" id="confirm_password" class="form-control form-control" name="confirm_password" placeholder="Confirm password" required>
               </div>
-            </div>
-            <div class="mb-4">
-              <label for="password" class="form-label small text-muted">Password</label>
-              <div class="input-group">
-                <input type="password" id="password" class="form-control form-control-lg" name="password" placeholder="Create password" required>
-              </div>
-              <div class="form-text">Password requirement</div>
+              
             </div>
             <div class="d-grid">
-              <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
+              <button type="submit" class="btn btn-fridge">Create Account</button>
             </div>
           </form>
         </div>
         <div class="card-footer text-center py-3 bg-light">
-          <p class="mb-0">Already have an account? <a href="/login" class="text-primary fw-bold">Sign In</a></p>
+          <p class="mb-0">Already have an account? <a href="/login" class="text-fridge fw-bold">Sign In</a></p>
         </div>
       </div>
     </div>
