@@ -211,9 +211,8 @@ async function pullSpoonacularAPIByQuery(queryString){
   }
   catch{
     console.log("Error fetching Spoonacular data. See log below: ")
-    console.log(error);
-    return error
-  }    
+    return
+    }    
 
   if (foundRecipes == null){
     console.log("Error fetching Spoonacular data")
@@ -228,68 +227,63 @@ async function pullSpoonacularAPIByQuery(queryString){
     let item = foundRecipes.results[index]
 
     // Construct the ingredient insertion query and ingredient ID fetch query
-
-    let insertIngredientsQueryStart = "INSERT INTO ingredients (ingredient_name) VALUES "
-    let insertIngredientsQueryMiddle = ""
     
     // Use CONFLICT DO NOTHING for inserting ingredients so that it does not scream about duplicate ingredients.
-    let insertIngredientsQueryEnd = " ON CONFLICT (ingredient_name) DO NOTHING"
 
 
     // Iterates throught the extended ingredients, gets the clean names, and adds them to both the insert query and the
     // ID fetch query.
+
+    ingredients = []
+
     for (ingredient in item.extendedIngredients){
-      let name = ingredient.nameClean
-      if (insertIngredientsQueryMiddle == ""){
-        insertIngredientsQueryMiddle = `('${name}')`
-      }
-      else{
-        insertIngredientsQueryMiddle += `, ('${name}')`
-      }
+      let name = item.extendedIngredients[ingredient].nameClean
+      ingredients.push(name)
     }
-
-    let insertIngredientsQuery = insertIngredientsQueryStart + insertIngredientsQueryMiddle + insertIngredientsQueryEnd
-
-
-    // Construct the recipe insertion query
-
-    let insertRecipeQueryStart = "INSERT INTO recipes (recipe_name, ready_time_minutes, recipe_link, recipe_image) VALUES "
-    let insertRecipeQueryMiddle = `('${item.title}', ${item.readyInMinutes}, '${item.sourceUrl}', '${item.image}')`
-    let insertRecipeQueryEnd = " ON CONFLICT (recipe_name) DO NOTHING RETURNING recipe_id" // Same reason as above, in case a duplicate recipe name ends up getting inserted.
-
-    let insertRecipeQuery = insertRecipeQueryStart + insertRecipeQueryMiddle + insertRecipeQueryEnd
-
 
     try {
       // use task to execute multiple queries
       const results = await db.task(async t => {
-        if(insertIngredientsQueryMiddle == ""){
+        if(ingredients == []){
           console.log("No ingredients to insert, continuing...")
         }
         else{
+          console.log(ingredients)
+          for(ingredient in ingredients){
+            console.log(ingredient)
+            const insertedIngredientIDs = await t.query("INSERT INTO ingredients (ingredient_name) VALUES ($1) ON CONFLICT DO NOTHING RETURNING (ingredient_id)", ingredients[ingredient]);
+          }
           console.log("Successfully inserted ingredients.")
-          const insertedIngredientIDs = await t.any(insertIngredientsQuery);
         }
-        const insertedRecipeID = await t.any(insertRecipeQuery);
+        const insertedRecipeID = await t.query("INSERT INTO recipes (recipe_name, ready_time_minutes, recipe_link, recipe_image) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING(recipe_id)", [
+          item.title, item.readyInMinutes, item.sourceUrl, item.image
+        ]);
 
+        
 
         let recipeID = null
-
-        for(row in insertedRecipeID){
-          recipeID = row.recipe_id
+        if (insertedRecipeID.length != 0){
+          recipeID = insertedRecipeID[0].recipe_id
         }
+
+        await t.query("COMMIT")
+
 
         // Check if recipe has been inserted.
         if(recipeID != null){
+          console.log("Inserting ingredients")
           // TODO: Iterate through all of the ingredients in the recipe, then find the corresponding ingredient ID from the query, and       
       
-          for(ingredient in item.extendedIngredients){
+          for(ingredientIndex in item.extendedIngredients){
+            ingredient = item.extendedIngredients[ingredientIndex]
             let name = ingredient.nameClean
             let unit = ingredient.unit
             let amount = ingredient.amount
             const ingredientID = await t.one(`SELECT ingredient_id FROM ingredients WHERE ingredient_name='${name}'`)
             // Specifically using t.one because this should ALWAYS WORK BECAUSE THE RECIPE WAS FRESHLY INSERTED.
-            const linkRecipeIngredients = await t.one(`INSERT INTO recipe_ingredients (recipe_id, ingredient_id, ingredient_unit, ingredient_unit_quantity) VALUES (${recipeID}, ${ingredientID}, '${unit}', ${amount})`)
+            console.log(ingredientID)
+            const linkRecipeIngredients = await t.query(`INSERT INTO recipe_ingredients (recipe_id, ingredient_id, ingredient_unit, ingredient_unit_quantity) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+              [recipeID, ingredientID.ingredient_id, unit, amount])
           }
           console.log(`Successfully inserted recipe ${item.title} into table!`)
         }
@@ -311,6 +305,8 @@ app.get('/welcome', (req, res) => {
   res.json({status: 'success', message: 'Welcome!'});
 });
 
+
+// pullSpoonacularAPIByQuery("beef")
 
 // Start the server
 module.exports = app.listen(3000);
