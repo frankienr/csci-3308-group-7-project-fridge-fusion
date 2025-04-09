@@ -475,6 +475,143 @@ async function pullSpoonacularAPIByQuery(queryString){
   }
 }
 
+app.get('/friends', async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+
+  try {
+    // query to get all friends of the current user
+    const friendsQuery = `
+      SELECT u.first_name, u.last_name, u.username 
+      FROM users u
+      JOIN user_friends uf ON u.user_id = uf.friend_id
+      WHERE uf.user_id = $1
+      ORDER BY u.first_name, u.last_name`;
+    
+    const friends = await db.any(friendsQuery, [req.session.user]);
+    
+    res.render('pages/friends', {
+      friends: friends
+    });
+  } catch (error) {
+    console.error("Error fetching friends:", error);
+    res.render('pages/friends', {
+      error: true,
+      message: "Failed to load friends list",
+      friends: []
+    });
+  }
+});
+
+app.post('/addfriend', async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+
+  const username = req.body.new_friend;
+  
+  try {
+    // checking if the user exists
+    const userQuery = await db.any('SELECT user_id FROM users WHERE username = $1', [username]);
+    
+    if (userQuery.length === 0) {
+      // if user not found, send error message
+      const friends = await db.any(`
+        SELECT u.first_name, u.last_name, u.username 
+        FROM users u
+        JOIN user_friends uf ON u.user_id = uf.friend_id
+        WHERE uf.user_id = $1`, [req.session.user]);
+      
+      return res.render('pages/friends', {
+        error: true,
+        message: "User not found",
+        friends: friends
+      });
+    }
+    
+    const friendId = userQuery[0].user_id;
+    
+    // don't let user add themselves as friend
+    if (friendId === req.session.user) {
+      const friends = await db.any(`
+        SELECT u.first_name, u.last_name, u.username 
+        FROM users u
+        JOIN user_friends uf ON u.user_id = uf.friend_id
+        WHERE uf.user_id = $1`, [req.session.user]);
+      
+      return res.render('pages/friends', {
+        error: true,
+        message: "You cannot add yourself as a friend",
+        friends: friends
+      });
+    }
+    
+    // check if already friends
+    const existingFriendship = await db.any('SELECT * FROM user_friends WHERE user_id = $1 AND friend_id = $2', 
+      [req.session.user, friendId]);
+    
+    if (existingFriendship.length > 0) {
+      const friends = await db.any(`
+        SELECT u.first_name, u.last_name, u.username 
+        FROM users u
+        JOIN user_friends uf ON u.user_id = uf.friend_id
+        WHERE uf.user_id = $1
+      `, [req.session.user]);
+      
+      return res.render('pages/friends', {
+        error: true,
+        message: "You are already friends with this user",
+        friends: friends
+      });
+    }
+    
+    // add to friend list
+    await db.none('INSERT INTO user_friends (user_id, friend_id) VALUES ($1, $2)', 
+      [req.session.user, friendId]);
+    
+    // see updated friends list
+    res.redirect('/friends');
+    
+  } catch (error) {
+    console.error("Error adding friend:", error);
+    res.render('pages/friends', {
+      error: true,
+      message: "Failed to add friend",
+      friends: []
+    });
+  }
+});
+
+app.post('/friends/delete', async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+
+  const username = req.body.friend;
+  
+  try {
+    // get user id of friend you want to unfriend
+    const userQuery = await db.any('SELECT user_id FROM users WHERE username = $1', [username]);
+    
+    if (userQuery.length === 0) {
+      return res.redirect('/friends');
+    }
+    
+    const friendId = userQuery[0].user_id;
+
+    // removing the friendship
+    await db.none('DELETE FROM user_friends WHERE user_id = $1 AND friend_id = $2', 
+      [req.session.user, friendId]);
+    
+    res.redirect('/friends');
+    
+  } catch (error) {
+    console.error("Error removing friend:", error);
+    res.redirect('/friends');
+  }
+});
+
 app.get('/logout', (req, res) => {
   req.session.destroy(function(err) {
     res.render('pages/logout');
