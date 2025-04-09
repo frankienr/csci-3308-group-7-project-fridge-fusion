@@ -73,21 +73,6 @@ const auth = (req, res, next) => {
 // Authentication Required
 app.use(auth);
 
-app.get('/profile', (req, res) => {
-  if (!req.session.user) {
-    return res.status(401).send('Not authenticated');
-  }
-  try {
-    res.status(200).json({
-      username: req.session.user.username,
-    });
-  } catch (err) {
-    console.error('Profile error:', err);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-
 /////////////// ROUTES /////////////// 
 app.get('/', (req, res) => {
     res.redirect("/login")
@@ -98,32 +83,37 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
+  const username = req.body.username;
+  const password = req.body.password;
+
+
+  const hash = await bcrypt.hash(password, 10);
+  console.log(hash)
+
+
+  if(!username || !password){
+    return res.status(400).json({ error: 'Username and password are required'});
+  }
+
+  const result = await db.query(`SELECT user_id, password FROM users WHERE username = $1;`, [username]); 
+
+  if(!result[0]){
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
   
-    if(!username || !password){
-      return res.status(400).json({ error: 'Username and password are required'});
-    }
-  
-    // edit line below to match our database
-    const result = await db.query(`SELECT * FROM users WHERE username = $1;`, [username]); 
-  
-    if(!result[0]){
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-  
-    const user = result[0];
-  
-    const match = await bcrypt.compare(req.body.password, user.password);
-  
-    if(!match){
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-  
-    req.session.user = user;
-    req.session.save();
-  
-    res.redirect('/profile');
+  const user = result[0];
+
+
+  const match = await bcrypt.compare(req.body.password, user.password);
+
+  if(!match){
+    return res.status(401).json({ error: 'Invalid username or password' });
+  }
+
+  req.session.user = user.user_id;
+  req.session.save();
+  console.log("Redirecting to profile")
+  res.redirect('/profile');
 });
 
 app.get('/register', (req, res) => {
@@ -131,49 +121,64 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    try {
-        const username = req.body.username;
-        const password = req.body.password;
-        const confirm_password = req.body.confirm_password;
-        const email = req.body.email;
-        
-        if (!username || !password || !confirm_password || !email) {
-          return res.status(400).json({ error: 'Complete all required fields' });
-        }
-        
-        if(password != confirm_password){
-          return res.status(400).json( { error : "Passwords don't macth" });
-        }
+  try {
+    const first_name = req.body.first_name
+    const last_name = req.body.last_name
+    const username = req.body.username;
+    const password = req.body.password;
+    const confirm_password = req.body.confirm_password;
+    const email = req.body.email;
+    
+    if (!username || !password || !confirm_password || !email || !first_name || !last_name) {
+      return res.status(400).json({ error: 'Complete all required fields' });
+    }
+    
+    if(password != confirm_password){
+      return res.status(400).json( { error : "Passwords don't match" });
+    }
 
-        // Hash the password using bcrypt
-        const hash = await bcrypt.hash(password, 10);
-    
-        // Insert username and hashed password into the 'users' table
-        // edit line below to match our database
-        await db.query('INSERT INTO users(username, password) VALUES ($1, $2);', [username, hash]);
-    
-        res.redirect('/login');
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
-      }
+    // Hash the password using bcrypt
+    const hash = await bcrypt.hash(password, 10);
+
+    console.log(hash)
+
+    // Insert username and hashed password into the 'users' table
+    // edit line below to match our database
+    await db.query('INSERT INTO users(first_name, last_name, username, password, email) VALUES ($1, $2, $3, $4, $5);', [first_name, last_name, username, hash, email]);
+
+    res.redirect('/login');
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 
 app.get('/fridge', async (req, res) => {
-    if(!req.session.user){
-      return res.redirect('/login');
-    }
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
 
-    res.render('pages/fridge');
+  const fetchUserIngredients = await db.query("SELECT ingredient_name from user_ingredients JOIN ingredients ON ingredients.ingredient_id=user_ingredients.ingredient_id WHERE user_id=$1", [req.session.user])
+  
+  console.log(fetchUserIngredients)
+
+  res.render('pages/fridge');
 });
 
 app.get('/profile', async (req, res) => {
-    if(!req.session.user){
-      return res.redirect('/login');
-    }
+  console.log("Rendering profile")
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
 
-    res.render('pages/profile');
+  const retrieveUserData = await db.one("SELECT first_name, last_name, username, email FROM users WHERE user_id = $1", [req.session.user])
+
+  console.log(retrieveUserData)
+
+  res.render('pages/profile', 
+    retrieveUserData
+  );
 });
 
 app.get('/recipes', async (req, res) => {
