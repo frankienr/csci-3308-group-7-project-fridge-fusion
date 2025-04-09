@@ -11,6 +11,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const axios = require('axios');
+const { availableParallelism } = require('os');
 
 // Create handlebars instance
 const hbs = handlebars.create({
@@ -73,21 +74,6 @@ const auth = (req, res, next) => {
 // Authentication Required
 app.use(auth);
 
-app.get('/profile', (req, res) => {
-  if (!req.session.user) {
-    return res.status(401).send('Not authenticated');
-  }
-  try {
-    res.status(200).json({
-      username: req.session.user.username,
-    });
-  } catch (err) {
-    console.error('Profile error:', err);
-    res.status(500).send('Internal Server Error');
-  }
-});
-
-
 /////////////// ROUTES /////////////// 
 app.get('/', (req, res) => {
     res.redirect("/login")
@@ -98,32 +84,49 @@ app.get('/login', (req, res) => {
 });
 
 app.post('/login', async (req, res) => {
-    const username = req.body.username;
-    const password = req.body.password;
+  const username = req.body.username;
+  const password = req.body.password;
+
+  if(!username || !password){
+    res.render("pages/login", {
+      "message": "Username and password are required.",
+      "error": true
+    })
+    return
+  }
+
+  const result = await db.query(`SELECT user_id, password FROM users WHERE username = $1;`, [username]); 
+
+  if(!result[0]){
+
+    res.render("pages/login", {
+      "message": "Invalid username or password.",
+      "error": true
+    })
+    return
+  }
   
-    if(!username || !password){
-      return res.status(400).json({ error: 'Username and password are required'});
-    }
+  const user = result[0];
+
+
+  const match = await bcrypt.compare(req.body.password, user.password);
+
+  console.log(user.password)
   
-    // edit line below to match our database
-    const result = await db.query(`SELECT * FROM users WHERE username = $1;`, [username]); 
-  
-    if(!result[0]){
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-  
-    const user = result[0];
-  
-    const match = await bcrypt.compare(req.body.password, user.password);
-  
-    if(!match){
-      return res.status(401).json({ error: 'Invalid username or password' });
-    }
-  
-    req.session.user = user;
-    req.session.save();
-  
-    res.redirect('/profile');
+
+  if(!match){
+
+    res.render("pages/login", {
+      "message": "Invalid username or password.",
+      "error": true
+    })
+    return
+}
+
+  req.session.user = user.user_id;
+  req.session.save();
+  console.log("Redirecting to profile")
+  res.redirect('/profile');
 });
 
 app.get('/register', (req, res) => {
@@ -131,49 +134,162 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    try {
-        const username = req.body.username;
-        const password = req.body.password;
-        const confirm_password = req.body.confirm_password;
-        const email = req.body.email;
-        
-        if (!username || !password || !confirm_password || !email) {
-          return res.status(400).json({ error: 'Complete all required fields' });
-        }
-        
-        if(password != confirm_password){
-          return res.status(400).json( { error : "Passwords don't macth" });
-        }
+  try {
+    const first_name = req.body.first_name
+    const last_name = req.body.last_name
+    const username = req.body.username;
+    const password = req.body.password;
+    const confirm_password = req.body.confirm_password;
+    const email = req.body.email;
+    
+    if (!username || !password || !confirm_password || !email || !first_name || !last_name) {
+      res.render("pages/register", {
+        "message": "Complete all required fields",
+        "error": true
+      })
+      return
+    }
+    
+    if(password != confirm_password){
+      res.render("pages/register", {
+        "message": "Passwords don't match",
+        "error": true
+      })
+      return
+    }
 
-        // Hash the password using bcrypt
-        const hash = await bcrypt.hash(password, 10);
-    
-        // Insert username and hashed password into the 'users' table
-        // edit line below to match our database
-        await db.query('INSERT INTO users(username, password) VALUES ($1, $2);', [username, hash]);
-    
-        res.redirect('/login');
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Internal server error' });
-      }
+    // Hash the password using bcrypt
+    const hash = await bcrypt.hash(password, 10);
+
+    console.log(hash)
+
+    // Insert username and hashed password into the 'users' table
+    // edit line below to match our database
+    await db.query('INSERT INTO users(first_name, last_name, username, password, email) VALUES ($1, $2, $3, $4, $5);', [first_name, last_name, username, hash, email]);
+
+    res.redirect('/login');
+  } catch (error) {
+    console.error(error);
+    res.render("pages/register", {
+      "message": "Internal server error. Try again later.",
+      "error": true
+    })
+  }
 });
 
+async function getUserIngredients(user_id){
+  const fetchUserIngredients = await db.query("SELECT ingredient_name from user_ingredients JOIN ingredients ON ingredients.ingredient_id=user_ingredients.ingredient_id WHERE user_id=$1", [user_id])
+
+  let ingredientsArray = []
+
+  for(ingredientIndex in fetchUserIngredients){
+    let ingredient = fetchUserIngredients[ingredientIndex]
+    ingredientsArray.push(ingredient.ingredient_name)
+  }
+
+  return ingredientsArray
+
+}
+
+async function getAllIngredients(){
+  const fetchAllIngredients = await db.query("SELECT ingredient_name FROM ingredients")
+
+  let allIngredientsArray = []
+
+  for(ingredientIndex in fetchAllIngredients){
+    let ingredient = fetchAllIngredients[ingredientIndex]
+    allIngredientsArray.push(ingredient.ingredient_name)
+  }
+
+  return allIngredientsArray
+}
 
 app.get('/fridge', async (req, res) => {
-    if(!req.session.user){
-      return res.redirect('/login');
-    }
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
 
-    res.render('pages/fridge');
+  res.render('pages/fridge', {
+    "ingredients": await getUserIngredients(req.session.user),
+    "seen_ingreds": await getAllIngredients()
+  });
 });
 
-app.get('/profile', async (req, res) => {
-    if(!req.session.user){
-      return res.redirect('/login');
-    }
+app.post('/fridge/delete', async (req, res) => {
+  // try{
+    console.log("ingredient_name", req.body.ingredient)
+    const getIngredientID = await db.one("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [req.body.ingredient])
+    const ingredient_id = getIngredientID.ingredient_id
+    const results = await db.none("DELETE FROM user_ingredients WHERE ingredient_id=$1 AND user_id=$2", [ingredient_id, req.session.user])
+    console.log(results)
+    res.redirect("/fridge")
+  // }
+  // catch{
+  //   console.log("Failed to delete")  
+  //   res.render("pages/fridge", {
+  //     "error": true,
+  //     "message": "Failed to delete item!",
+  //     "ingredients": await getUserIngredients(req.session.user),
+  //     "seen_ingreds": await getAllIngredients()
+  //   })
+  // }
+});
 
-    res.render('pages/profile');
+app.get("/home", (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+  res.render("pages/home")
+})
+
+app.post('/fridge/add', async (req, res) => {
+  const new_ingredient = req.body.new_ingredient
+  console.log("new_ingredient", new_ingredient)
+  // try{
+    let getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
+    console.log(getIngredientID)
+    if(!getIngredientID[0]){
+      // Ingredient does not already exist in database, search for it then try again
+      pullSpoonacularAPIByQuery(new_ingredient)
+      getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
+      if(!getIngredientID[0]){
+        // This means that even though recipes were pulled, that exact ingredient was not found. Should search in dropdown list
+        // Fetch everything for rendering so that the message can be passed in.
+
+        res.render("pages/fridge", {
+          "error": true,
+          "message": "Successfully pulled new recipes, unable to find exact ingredient name. Please select from the recommended options.",
+          "ingredients": await getUserIngredients(req.session.user),
+          "seen_ingreds": await getAllIngredients()
+        })
+        return
+      }
+    }
+    // If execution gets this far, then at some point a correct ingredient ID was found. Insert into table
+
+    const ingredientID = getIngredientID[0].ingredient_id
+    const linkIngredientWithUser = await db.none("INSERT INTO user_ingredients (user_id, ingredient_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [req.session.user, ingredientID])
+
+    res.redirect("/fridge")
+    // }
+  // catch{
+
+  // }
+})
+
+app.get('/profile', async (req, res) => {
+  console.log("Rendering profile")
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+
+  const retrieveUserData = await db.one("SELECT first_name, last_name, username, email FROM users WHERE user_id = $1", [req.session.user])
+
+  console.log(retrieveUserData)
+
+  res.render('pages/profile', 
+    retrieveUserData
+  );
 });
 
 app.get('/home', async (req, res) => {
@@ -187,9 +303,61 @@ app.get('/home', async (req, res) => {
 app.get('/recipes', async (req, res) => {
   if(!req.session.user){
     return res.redirect('/login');
-  }  
+  }
+
+  const recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+                      COUNT(recipe_ingredients.ingredient_id) AS matchCount FROM
+                      (recipes JOIN recipe_ingredients 
+                      ON recipe_ingredients.recipe_id=recipes.recipe_id) 
+                      JOIN user_ingredients ON user_ingredients.ingredient_id=recipe_ingredients.ingredient_id
+
+                      WHERE user_id=$1 
+                      GROUP BY recipes.recipe_id
+                      ORDER BY matchCount DESC
+                      LIMIT 20;`
+
+  // Right now the query limits to 20 pages, but pagination can be added.
+  // Maybe add matchcount as a parameter, or highlight the ingredients they have.
+
+  const availableRecipes = await db.any(recipeQuery, [req.session.user])
+
+  recipeArray = []
+
+  console.log(availableRecipes)
+
+  for(recipeIndex in availableRecipes){
+    let recipe = availableRecipes[recipeIndex]
+
+    console.log("Reading ", recipe.recipe_id)
+
+    let recipeIngredients = await db.any("SELECT ingredient_name FROM ingredients JOIN recipe_ingredients ON ingredients.ingredient_id=recipe_ingredients.ingredient_id WHERE recipe_ingredients.recipe_id=$1", [recipe.recipe_id])
+
+    ingredientString = ""
+
+    for(ingredientIndex in recipeIngredients){
+      let ingredient = recipeIngredients[ingredientIndex]
+      if(ingredientString == ""){
+        ingredientString = ingredient.ingredient_name
+      }
+      else{
+        ingredientString += ", " + ingredient.ingredient_name
+      }
+    }
+
+    let recipeData = {
+      "image": recipe.recipe_image,
+      "title": recipe.recipe_name,
+      "readyInMinutes": recipe.ready_time_minutes,
+      "sourceUrl": recipe.recipe_link,
+      "ingredients": ingredientString
+    }
+
+    recipeArray.push(recipeData)
+  }
   
-  res.render('pages/recipes');
+  res.render('pages/recipes', {
+    recipes: recipeArray
+  });
 });
 //What other pages will we have?
 
