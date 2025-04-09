@@ -474,6 +474,13 @@ async function pullSpoonacularAPIByQuery(queryString){
     }
   }
 }
+
+app.get('/logout', (req, res) => {
+  req.session.destroy(function(err) {
+    res.render('pages/logout');
+  });
+});
+
 // Testing route
 
 app.get('/welcome', (req, res) => {
