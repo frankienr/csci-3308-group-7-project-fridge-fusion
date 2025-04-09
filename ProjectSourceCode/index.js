@@ -88,13 +88,22 @@ app.post('/login', async (req, res) => {
   const password = req.body.password;
 
   if(!username || !password){
-    return res.status(400).json({ error: 'Username and password are required'});
+    res.render("pages/login", {
+      "message": "Username and password are required.",
+      "error": true
+    })
+    return
   }
 
   const result = await db.query(`SELECT user_id, password FROM users WHERE username = $1;`, [username]); 
 
   if(!result[0]){
-    return res.status(401).json({ error: 'Invalid username or password' });
+
+    res.render("pages/login", {
+      "message": "Invalid username or password.",
+      "error": true
+    })
+    return
   }
   
   const user = result[0];
@@ -106,8 +115,13 @@ app.post('/login', async (req, res) => {
   
 
   if(!match){
-    return res.status(401).json({ error: 'Invalid username or password' });
-  }
+
+    res.render("pages/login", {
+      "message": "Invalid username or password.",
+      "error": true
+    })
+    return
+}
 
   req.session.user = user.user_id;
   req.session.save();
@@ -129,11 +143,19 @@ app.post('/register', async (req, res) => {
     const email = req.body.email;
     
     if (!username || !password || !confirm_password || !email || !first_name || !last_name) {
-      return res.status(400).json({ error: 'Complete all required fields' });
+      res.render("pages/register", {
+        "message": "Complete all required fields",
+        "error": true
+      })
+      return
     }
     
     if(password != confirm_password){
-      return res.status(400).json( { error : "Passwords don't match" });
+      res.render("pages/register", {
+        "message": "Passwords don't match",
+        "error": true
+      })
+      return
     }
 
     // Hash the password using bcrypt
@@ -148,7 +170,10 @@ app.post('/register', async (req, res) => {
     res.redirect('/login');
   } catch (error) {
     console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
+    res.render("pages/register", {
+      "message": "Internal server error. Try again later.",
+      "error": true
+    })
   }
 });
 
@@ -210,6 +235,13 @@ app.post('/fridge/delete', async (req, res) => {
   // }
 });
 
+app.get("/home", (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+  res.render("pages/home")
+})
+
 app.post('/fridge/add', async (req, res) => {
   const new_ingredient = req.body.new_ingredient
   console.log("new_ingredient", new_ingredient)
@@ -236,7 +268,7 @@ app.post('/fridge/add', async (req, res) => {
     // If execution gets this far, then at some point a correct ingredient ID was found. Insert into table
 
     const ingredientID = getIngredientID[0].ingredient_id
-    const linkIngredientWithUser = await db.none("INSERT INTO user_ingredients (user_id, ingredient_id) VALUES ($1, $2)", [req.session.user, ingredientID])
+    const linkIngredientWithUser = await db.none("INSERT INTO user_ingredients (user_id, ingredient_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [req.session.user, ingredientID])
 
     res.redirect("/fridge")
     // }
