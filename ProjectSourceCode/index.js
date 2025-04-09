@@ -250,7 +250,7 @@ app.post('/fridge/add', async (req, res) => {
     console.log(getIngredientID)
     if(!getIngredientID[0]){
       // Ingredient does not already exist in database, search for it then try again
-      pullSpoonacularAPIByQuery(new_ingredient)
+      pullSpoonacularAPIByIngredient(new_ingredient)
       getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
       if(!getIngredientID[0]){
         // This means that even though recipes were pulled, that exact ingredient was not found. Should search in dropdown list
@@ -258,7 +258,7 @@ app.post('/fridge/add', async (req, res) => {
 
         res.render("pages/fridge", {
           "error": true,
-          "message": "Successfully pulled new recipes, unable to find exact ingredient name. Please select from the recommended options.",
+          "message": "Successfully pulled new recipes, unable to find recipes with EXACT ingredient name. Please select closest match from available options.",
           "ingredients": await getUserIngredients(req.session.user),
           "seen_ingreds": await getAllIngredients()
         })
@@ -474,6 +474,121 @@ async function pullSpoonacularAPIByQuery(queryString){
     }
   }
 }
+
+
+async function pullSpoonacularAPIByIngredient(ingredient){
+
+  const apiKey = process.env.SPOONACULAR_API_KEY
+
+  let foundRecipes = null
+
+  console.log("Fetching Spoonacular recipes.")
+  try{
+    const response = await axios.get('https://api.spoonacular.com/recipes/complexSearch', {
+      headers: {
+        "x-api-key": apiKey
+      },
+      "params": {
+        "includeIngredients" : ingredient,
+        "addRecipeInformation" : true,
+        "fillIngredients" : true 
+      }
+    })
+    foundRecipes = response.data
+  }
+  catch{
+    console.log("Error fetching Spoonacular data. See log below: ")
+    return
+    }    
+
+  if (foundRecipes == null){
+    console.log("Error fetching Spoonacular data")
+    return
+  }
+
+
+  console.log("Successfully pulled Spoonacular data, inserting into DB...", foundRecipes)
+  // Iterates through all of the returned recipes, and grabs the appropriate data to insert.
+  for(index in foundRecipes.results){ 
+
+    let item = foundRecipes.results[index]
+
+    // Construct the ingredient insertion query and ingredient ID fetch query
+    
+    // Use CONFLICT DO NOTHING for inserting ingredients so that it does not scream about duplicate ingredients.
+
+
+    // Iterates throught the extended ingredients, gets the clean names, and adds them to both the insert query and the
+    // ID fetch query.
+
+    ingredients = []
+
+    for (ingredient in item.extendedIngredients){
+      let name = item.extendedIngredients[ingredient].nameClean
+      ingredients.push(name)
+    }
+
+    try {
+      // use task to execute multiple queries
+      const results = await db.task(async t => {
+        if(ingredients == []){
+          console.log("No ingredients to insert, continuing...")
+        }
+        else{
+          console.log(ingredients)
+          for(ingredient in ingredients){
+            console.log(ingredient)
+            const insertedIngredientIDs = await t.query("INSERT INTO ingredients (ingredient_name) VALUES ($1) ON CONFLICT DO NOTHING RETURNING (ingredient_id)", ingredients[ingredient]);
+          }
+          console.log("Successfully inserted ingredients.")
+        }
+        const insertedRecipeID = await t.query("INSERT INTO recipes (recipe_name, ready_time_minutes, recipe_link, recipe_image) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING(recipe_id)", [
+          item.title, item.readyInMinutes, item.sourceUrl, item.image
+        ]);
+
+        
+
+        let recipeID = null
+        if (insertedRecipeID.length != 0){
+          recipeID = insertedRecipeID[0].recipe_id
+        }
+
+        await t.query("COMMIT")
+
+
+        // Check if recipe has been inserted.
+        if(recipeID != null){
+          console.log("Inserting ingredients")
+          // TODO: Iterate through all of the ingredients in the recipe, then find the corresponding ingredient ID from the query, and       
+      
+          for(ingredientIndex in item.extendedIngredients){
+            ingredient = item.extendedIngredients[ingredientIndex]
+            let name = ingredient.nameClean
+            let unit = ingredient.unit
+            let amount = ingredient.amount
+            const ingredientID = await t.one(`SELECT ingredient_id FROM ingredients WHERE ingredient_name='${name}'`)
+            // Specifically using t.one because this should ALWAYS WORK BECAUSE THE RECIPE WAS FRESHLY INSERTED.
+            console.log(ingredientID)
+            const linkRecipeIngredients = await t.query(`INSERT INTO recipe_ingredients (recipe_id, ingredient_id, ingredient_unit, ingredient_unit_quantity) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`,
+              [recipeID, ingredientID.ingredient_id, unit, amount])
+          }
+          console.log(`Successfully inserted recipe ${item.title} into table!`)
+        }
+        else{
+          console.log(`Recipe ${item.title} already exists, skipping.`)
+        }
+
+      });
+    } catch (err) {
+      console.log(err)
+      return err
+    }
+  }
+
+}
+
+
+// pullSpoonacularAPIByIngredient("shallots")
 
 app.get('/logout', (req, res) => {
   req.session.destroy(function(err) {
