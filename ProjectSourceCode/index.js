@@ -76,11 +76,24 @@ app.use(auth);
 
 /////////////// ROUTES /////////////// 
 app.get('/', (req, res) => {
-    res.redirect("/login")
+  if(!req.session.user){
+    res.redirect('/login');
+  }
+
+  else{
+    res.redirect('/home');
+  }
+});
+
+app.get('/home', (req, res) => {
+  if(!req.session.user){
+    res.redirect('/login');
+  }
+  res.render('pages/home');
 });
 
 app.get('/login', (req, res) => {
-    res.render('pages/login');
+  res.render('pages/login');
 });
 
 app.post('/login', async (req, res) => {
@@ -112,7 +125,7 @@ app.post('/login', async (req, res) => {
   req.session.user = user.user_id;
   req.session.save();
   console.log("Redirecting to profile")
-  res.redirect('/profile');
+  res.redirect('/home');
 });
 
 app.get('/register', (req, res) => {
