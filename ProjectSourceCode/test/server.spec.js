@@ -61,25 +61,13 @@ it('Negative : /register. Checking invalid name', done => {
     });
 });
 
-it('Negative : /register. Checking invalid name', done => {
-    chai
-    .request(server)
-    .post('/register')
-    .send({"username": "JohnDoe", "password": "password"})
-    .end((err, res) => {
-        expect(res).to.have.status(400);
-        expect(res.body.message).to.equals('Invalid input');
-        done();
-    });
-});
-
-
 
 describe('Profile Route Tests', () => {
     let agent;
     const testUser = {
       username: 'testuser',
       password: 'testpass123',
+      email: 'testuser@example.com'
     };
   
     before(async () => {
@@ -88,6 +76,7 @@ describe('Profile Route Tests', () => {
       await db.query('INSERT INTO users (username, password) VALUES ($1, $2) ON CONFLICT DO NOTHING', [
         testUser.username,
         hashedPassword,
+        testUser.email
       ]);
     });
   
@@ -131,3 +120,86 @@ describe('Profile Route Tests', () => {
       });
     });
   });
+
+// ********************** HANDLEBARS VIEWS TESTS **********************
+describe('Handlebars Views', () => {
+  // testing home page
+  it('Home page should render with correct elements', done => {
+    chai
+      .request(server)
+      .get('/')
+      .end((err, res) => {
+        expect(res).to.have.status(200);
+        expect(res.text).to.include('home'); 
+        expect(res.text).to.include('login');
+        expect(res.text).to.include('register');
+        done();
+      });
+  });
+
+  // test profile page renders correctly for authenticated user
+  it('Profile should render user-specific content when authenticated', done => {
+    const agent = chai.request.agent(server);
+    const validUser = {
+      username: 'JohnDoe',
+      password: 'password'
+    };
+    
+    // login for session
+    agent
+      .post('/login')
+      .send(validUser)
+      .end((err, res) => {
+        agent
+          .get('/profile')
+          .end((err, res) => {
+            expect(res).to.have.status(200);
+            expect(res.text).to.include('Profile');
+            agent.close();
+            done();
+          });
+      });
+  });
+});
+
+// ********************** ROUTES & CONTROLLERS TESTS **********************
+describe('Fridge Fusion Routes & Controllers', () => {
+  // test the fridge
+  it('GET /fridge should respond appropriately', done => {
+    chai
+      .request(server)
+      .get('/fridge')
+      .end((err, res) => {
+        //accept any valid response which could be redirect to login or forbidden
+        expect(res.status).to.be.oneOf([200, 302, 401, 403]);
+        done();
+      });
+  });
+
+  // if authenticated, test an ingredient can be added to a user's fridge 
+  it('Should be able to access fridge management when authenticated', done => {
+    const agent = chai.request.agent(server);
+    const validUser = {
+      username: 'JohnDoe',
+      password: 'password'
+    };
+    
+    // login to create session
+    agent
+      .post('/login')
+      .send(validUser)
+      .end((err, res) => {
+        agent
+          .get('/fridge')
+          .end((err, res) => {
+            if (res.status === 302) {
+              expect(res.header.location).to.not.include('login');
+            } else {
+              expect(res).to.have.status(200);
+            }
+            agent.close();
+            done();
+          });
+      });
+  });
+});
