@@ -176,6 +176,14 @@ app.get('/profile', async (req, res) => {
     res.render('pages/profile');
 });
 
+app.get('/home', async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+
+  res.render('pages/home');
+});
+
 app.get('/recipes', async (req, res) => {
   if(!req.session.user){
     return res.redirect('/login');
