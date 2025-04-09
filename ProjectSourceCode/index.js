@@ -323,24 +323,49 @@ app.get('/recipes', async (req, res) => {
 
   recipeArray = []
 
-  console.log(availableRecipes)
+  console.log("availableRecipes", availableRecipes)
 
   for(recipeIndex in availableRecipes){
     let recipe = availableRecipes[recipeIndex]
 
+    let userIngredients = await getUserIngredients(req.session.user)
+
+    console.log("userIngredients", userIngredients.join(", "))
+
+    for(index in userIngredients){
+      userIngredients[index] = "'" + userIngredients[index] + "'"
+    }
+
+
+    let userIngredientsCSV = userIngredients.join(", ")
+
+
     console.log("Reading ", recipe.recipe_id)
 
-    let recipeIngredients = await db.any("SELECT ingredient_name FROM ingredients JOIN recipe_ingredients ON ingredients.ingredient_id=recipe_ingredients.ingredient_id WHERE recipe_ingredients.recipe_id=$1", [recipe.recipe_id])
+    let recipeIngredients
+
+    if(userIngredients != []){
+      recipeIngredients = await db.any(`SELECT 
+        CASE 
+          WHEN ingredient_name IN (${userIngredientsCSV}) THEN '<span class="text-fridge-dark">' || ingredient_name || '</span>'
+          ELSE ingredient_name
+        END ingredient_listing 
+        FROM ingredients JOIN recipe_ingredients ON ingredients.ingredient_id=recipe_ingredients.ingredient_id WHERE recipe_ingredients.recipe_id=$1`, [recipe.recipe_id])
+    }
+    else{
+      res.render('pages/recipes');
+      return
+    }
 
     ingredientString = ""
 
     for(ingredientIndex in recipeIngredients){
       let ingredient = recipeIngredients[ingredientIndex]
       if(ingredientString == ""){
-        ingredientString = ingredient.ingredient_name
+        ingredientString = ingredient.ingredient_listing
       }
       else{
-        ingredientString += ", " + ingredient.ingredient_name
+        ingredientString += ", " + ingredient.ingredient_listing
       }
     }
 
