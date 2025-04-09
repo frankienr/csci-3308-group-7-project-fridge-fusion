@@ -1,4 +1,4 @@
-INSERT INTO users (first_name, last_name, username, email, password)
+INSERT INTO users (first_name, last_name, email, username, password)
 
 VALUES 
 (
@@ -27,16 +27,16 @@ VALUES
 INSERT INTO ingredients (ingredient_name) 
 VALUES
 (
-    'Apple'
+    'apple'
 ),
 (
-    'Cinnamon'
+    'cinnamon'
 ),
 (
-    'Salt'
+    'salt'
 ),
 (
-    'Milk'
+    'milk'
 ) ON CONFLICT DO NOTHING;
 
 

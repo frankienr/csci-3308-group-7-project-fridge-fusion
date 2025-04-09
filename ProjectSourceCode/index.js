@@ -86,11 +86,6 @@ app.post('/login', async (req, res) => {
   const username = req.body.username;
   const password = req.body.password;
 
-
-  const hash = await bcrypt.hash(password, 10);
-  console.log(hash)
-
-
   if(!username || !password){
     return res.status(400).json({ error: 'Username and password are required'});
   }
@@ -105,6 +100,9 @@ app.post('/login', async (req, res) => {
 
 
   const match = await bcrypt.compare(req.body.password, user.password);
+
+  console.log(user.password)
+  
 
   if(!match){
     return res.status(401).json({ error: 'Invalid username or password' });
@@ -153,18 +151,98 @@ app.post('/register', async (req, res) => {
   }
 });
 
+async function getUserIngredients(user_id){
+  const fetchUserIngredients = await db.query("SELECT ingredient_name from user_ingredients JOIN ingredients ON ingredients.ingredient_id=user_ingredients.ingredient_id WHERE user_id=$1", [user_id])
+
+  let ingredientsArray = []
+
+  for(ingredientIndex in fetchUserIngredients){
+    let ingredient = fetchUserIngredients[ingredientIndex]
+    ingredientsArray.push(ingredient.ingredient_name)
+  }
+
+  return ingredientsArray
+
+}
+
+async function getAllIngredients(){
+  const fetchAllIngredients = await db.query("SELECT ingredient_name FROM ingredients")
+
+  let allIngredientsArray = []
+
+  for(ingredientIndex in fetchAllIngredients){
+    let ingredient = fetchAllIngredients[ingredientIndex]
+    allIngredientsArray.push(ingredient.ingredient_name)
+  }
+
+  return allIngredientsArray
+}
 
 app.get('/fridge', async (req, res) => {
   if(!req.session.user){
     return res.redirect('/login');
   }
 
-  const fetchUserIngredients = await db.query("SELECT ingredient_name from user_ingredients JOIN ingredients ON ingredients.ingredient_id=user_ingredients.ingredient_id WHERE user_id=$1", [req.session.user])
-  
-  console.log(fetchUserIngredients)
-
-  res.render('pages/fridge');
+  res.render('pages/fridge', {
+    "ingredients": await getUserIngredients(req.session.user),
+    "seen_ingreds": await getAllIngredients()
+  });
 });
+
+app.post('/fridge/delete', async (req, res) => {
+  // try{
+    console.log("ingredient_name", req.body.ingredient)
+    const getIngredientID = await db.one("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [req.body.ingredient])
+    const ingredient_id = getIngredientID.ingredient_id
+    const results = await db.none("DELETE FROM user_ingredients WHERE ingredient_id=$1 AND user_id=$2", [ingredient_id, req.session.user])
+    console.log(results)
+    res.redirect("/fridge")
+  // }
+  // catch{
+  //   console.log("Failed to delete")  
+  //   res.render("pages/fridge", {
+  //     "error": true,
+  //     "message": "Failed to delete item!",
+  //     "ingredients": await getUserIngredients(req.session.user),
+  //     "seen_ingreds": await getAllIngredients()
+  //   })
+  // }
+});
+
+app.post('/fridge/add', async (req, res) => {
+  const new_ingredient = req.body.new_ingredient
+  console.log("new_ingredient", new_ingredient)
+  // try{
+    let getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
+    console.log(getIngredientID)
+    if(!getIngredientID[0]){
+      // Ingredient does not already exist in database, search for it then try again
+      pullSpoonacularAPIByQuery(new_ingredient)
+      getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
+      if(!getIngredientID[0]){
+        // This means that even though recipes were pulled, that exact ingredient was not found. Should search in dropdown list
+        // Fetch everything for rendering so that the message can be passed in.
+
+        res.render("pages/fridge", {
+          "error": true,
+          "message": "Successfully pulled new recipes, unable to find exact ingredient name. Please select from the recommended options.",
+          "ingredients": await getUserIngredients(req.session.user),
+          "seen_ingreds": await getAllIngredients()
+        })
+        return
+      }
+    }
+    // If execution gets this far, then at some point a correct ingredient ID was found. Insert into table
+
+    const ingredientID = getIngredientID[0].ingredient_id
+    const linkIngredientWithUser = await db.none("INSERT INTO user_ingredients (user_id, ingredient_id) VALUES ($1, $2)", [req.session.user, ingredientID])
+
+    res.redirect("/fridge")
+    // }
+  // catch{
+
+  // }
+})
 
 app.get('/profile', async (req, res) => {
   console.log("Rendering profile")
