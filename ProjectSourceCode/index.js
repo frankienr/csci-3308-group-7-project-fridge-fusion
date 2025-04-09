@@ -11,6 +11,7 @@ const bodyParser = require('body-parser');
 const session = require('express-session');
 const bcrypt = require('bcryptjs');
 const axios = require('axios');
+const { availableParallelism } = require('os');
 
 // Create handlebars instance
 const hbs = handlebars.create({
@@ -262,9 +263,61 @@ app.get('/profile', async (req, res) => {
 app.get('/recipes', async (req, res) => {
   if(!req.session.user){
     return res.redirect('/login');
-  }  
+  }
+
+  const recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+                      COUNT(recipe_ingredients.ingredient_id) AS matchCount FROM
+                      (recipes JOIN recipe_ingredients 
+                      ON recipe_ingredients.recipe_id=recipes.recipe_id) 
+                      JOIN user_ingredients ON user_ingredients.ingredient_id=recipe_ingredients.ingredient_id
+
+                      WHERE user_id=$1 
+                      GROUP BY recipes.recipe_id
+                      ORDER BY matchCount DESC
+                      LIMIT 20;`
+
+  // Right now the query limits to 20 pages, but pagination can be added.
+  // Maybe add matchcount as a parameter, or highlight the ingredients they have.
+
+  const availableRecipes = await db.any(recipeQuery, [req.session.user])
+
+  recipeArray = []
+
+  console.log(availableRecipes)
+
+  for(recipeIndex in availableRecipes){
+    let recipe = availableRecipes[recipeIndex]
+
+    console.log("Reading ", recipe.recipe_id)
+
+    let recipeIngredients = await db.any("SELECT ingredient_name FROM ingredients JOIN recipe_ingredients ON ingredients.ingredient_id=recipe_ingredients.ingredient_id WHERE recipe_ingredients.recipe_id=$1", [recipe.recipe_id])
+
+    ingredientString = ""
+
+    for(ingredientIndex in recipeIngredients){
+      let ingredient = recipeIngredients[ingredientIndex]
+      if(ingredientString == ""){
+        ingredientString = ingredient.ingredient_name
+      }
+      else{
+        ingredientString += ", " + ingredient.ingredient_name
+      }
+    }
+
+    let recipeData = {
+      "image": recipe.recipe_image,
+      "title": recipe.recipe_name,
+      "readyInMinutes": recipe.ready_time_minutes,
+      "sourceUrl": recipe.recipe_link,
+      "ingredients": ingredientString
+    }
+
+    recipeArray.push(recipeData)
+  }
   
-  res.render('pages/recipes');
+  res.render('pages/recipes', {
+    recipes: recipeArray
+  });
 });
 //What other pages will we have?
 
