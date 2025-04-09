@@ -580,8 +580,11 @@ app.post('/addfriend', async (req, res) => {
     }
     
     // add to friend list
-    await db.none('INSERT INTO user_friends (user_id, friend_id) VALUES ($1, $2)', 
-      [req.session.user, friendId]);
+    await db.tx(async t => {
+      await t.none('INSERT INTO user_friends (user_id, friend_id) VALUES ($1, $2)', [req.session.user, friendId]);
+      await t.none('INSERT INTO user_friends (user_id, friend_id) VALUES ($1, $2)', [friendId, req.session.user]);
+    });
+      
     
     // see updated friends list
     res.redirect('/friends');
@@ -614,8 +617,10 @@ app.post('/friends/delete', async (req, res) => {
     const friendId = userQuery[0].user_id;
 
     // removing the friendship
-    await db.none('DELETE FROM user_friends WHERE user_id = $1 AND friend_id = $2', 
-      [req.session.user, friendId]);
+    await db.tx(async t => {
+      await t.none('DELETE FROM user_friends WHERE user_id = $1 AND friend_id = $2', [req.session.user, friendId]);
+      await t.none('DELETE FROM user_friends WHERE user_id = $1 AND friend_id = $2', [friendId, req.session.user]);
+    });    
     
     res.redirect('/friends');
     
