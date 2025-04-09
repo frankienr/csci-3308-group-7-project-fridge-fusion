@@ -5,7 +5,20 @@
         <div class="card rounded-lg">
             <div class="card-header bg-fridge text-white text-center py-3">
                 <h3>Available recipes</h3>
+                <div class="d-flex justify-content-center align-items-center">
+                    <form class="d-flex align-items-center gap-2">
+                        <label for="sort_by" class="small mb-0 me-2 text-white">Sort by:</label>
+                        <select class="form-select form-select-sm bg-fridge border-white text-white" id="sort_by" style="width: auto;">
+                            <option value="ingredients_desc">↓ Matched ingredients</option>
+                            <option value="ingredients_asc">↑ Matched ingredients</option>
+                            <option value="time_desc">↓ Cook time</option>
+                            <option value="time_asc">↑ Cook time</option>
+                        </select>
+
+                    </form>
+                </div>
             </div>
+            
     <ul class="list-group">
         {{#each recipes}}
         <!-- recipes is a list holding each recipe -->
