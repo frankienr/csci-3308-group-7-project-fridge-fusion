@@ -1,0 +1,14 @@
+﻿* Group:
+   * Done: worked on functionality and aesthetics, friends page started
+   * To do: fixing issue with adding ingredients and none coming up, fuse with friends page 
+   * If we want: add another feature can be tricky and try and if it doesn’t work thats ok
+* Frankie:
+   * Done: aesthetics, compatibility
+   * To do: fuse with friends and logout routes
+* Hanna
+   * Done: tests, friends functionality
+   * To do: help with fuse with friends page func
+* Rodrigo:
+   * Done: testing log in and register pages, changes in where pages route you
+   * To do:  help with fuse with friends page middle layer
+   *
