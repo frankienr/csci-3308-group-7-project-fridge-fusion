@@ -2,54 +2,33 @@
 <div class="row">
     <!-- Left Panel -->
     <div class="col-md-8 left-panel py-3">
+        {{#if error}}
+        <div class="alert alert-danger">
+            {{message}}
+        </div>
+        {{/if}}
         <div class="card rounded-lg">
             <div class="card-header bg-fridge text-white text-center py-3">
                 <h3>My friends</h3>
             </div>
             <ul class="list-group">
-                {{#each friends}}
-                <!-- this holds the users friends -->
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        {{this.first_name}} {{this.last_name}} ({{this.username}})
+                {{#if friends.length}}
+                    {{#each friends}}
+                    <!-- this holds the users friends -->
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{this.first_name}} {{this.last_name}} ({{this.username}})
 
-                        <form action="/freinds/delete" method="POST">
-                            <button class="btn btn-fridge" type="submit">Unfriend</button>
-                            <input type="hidden" name="friend" value={{this.username}}></input>
-                        </form>                    
+                            <form action="/friends/delete" method="POST">
+                                <button class="btn btn-fridge" type="submit">Unfriend</button>
+                                <input type="hidden" name="friend" value="{{this.username}}">
+                            </form>                    
+                        </li>
+                    {{/each}}
+                {{else}}
+                    <li class="list-group-item text-center">
+                        You don't have any friends yet. Start adding some!
                     </li>
-                {{/each}}
-
-
-                <!-- examples to delete later -->
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Hanna Choi (hannac)
-                    <form action="/freinds/delete" method="POST">
-                        <button class="btn btn-fridge" type="submit">Unfriend</button>
-                        <input type="hidden" name="friend" value={{this.username}}></input>
-                    </form>                    
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Robert Schmidt (rschmidt)
-                    <form action="/freinds/delete" method="POST">
-                        <button class="btn btn-fridge" type="submit">Unfriend</button>
-                        <input type="hidden" name="friend" value={{this.username}}></input>
-                    </form>                    
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Rodrigo Franklin de Mello Nicastro (rodrigodmn)
-                    <form action="/freinds/delete" method="POST">
-                        <button class="btn btn-fridge" type="submit">Unfriend</button>
-                        <input type="hidden" name="friend" value={{this.username}}></input>
-                    </form>                    
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Frankie Nuffer-Rodriguez (frankienr)
-                    <form action="/freinds/delete" method="POST">
-                        <button class="btn btn-fridge" type="submit">Unfriend</button>
-                        <input type="hidden" name="friend" value={{this.username}}></input>
-                    </form>                    
-                </li>
-                
+                {{/if}}
             </ul>
         </div>
         <div class="card rounded-lg mt-2">
@@ -68,7 +47,6 @@
                     </div>
                 </form>
             </div>
-
         </div>
     </div>
 
@@ -79,7 +57,7 @@
                 <h3>Find recipes with friends</h3>
             </div>
             <div class="card-body p-4 d-flex justify-content-center">
-                <button class="btn btn-danger"><span style="font-family:Apple Chancery" href="/fuse">Fuse</span> with Friends</button>
+                <a class="btn btn-danger text-fusion" href="/fuse">Fuse with Friends</a>
             </div>
         </div>
     </div>

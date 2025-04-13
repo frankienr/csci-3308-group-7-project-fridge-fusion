@@ -76,11 +76,24 @@ app.use(auth);
 
 /////////////// ROUTES /////////////// 
 app.get('/', (req, res) => {
-    res.redirect("/login")
+  if(!req.session.user){
+    res.redirect('/login');
+  }
+
+  else{
+    res.redirect('/home');
+  }
+});
+
+app.get('/home', (req, res) => {
+  if(!req.session.user){
+    res.redirect('/login');
+  }
+  res.render('pages/home');
 });
 
 app.get('/login', (req, res) => {
-    res.render('pages/login');
+  res.render('pages/login');
 });
 
 app.post('/login', async (req, res) => {
@@ -126,7 +139,7 @@ app.post('/login', async (req, res) => {
   req.session.user = user.user_id;
   req.session.save();
   console.log("Redirecting to profile")
-  res.redirect('/profile');
+  res.redirect('/home');
 });
 
 app.get('/register', (req, res) => {
@@ -500,7 +513,6 @@ async function pullSpoonacularAPIByQuery(queryString){
   }
 }
 
-
 async function pullSpoonacularAPIByIngredient(ingredient){
 
   const apiKey = process.env.SPOONACULAR_API_KEY
@@ -614,6 +626,172 @@ async function pullSpoonacularAPIByIngredient(ingredient){
 
 
 // pullSpoonacularAPIByIngredient("shallots")
+app.get('/friends', async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+
+  try {
+    // query to get all friends of the current user
+    const friendsQuery = `
+      SELECT u.first_name, u.last_name, u.username 
+      FROM users u
+      JOIN user_friends uf ON u.user_id = uf.friend_id
+      WHERE uf.user_id = $1
+      ORDER BY u.first_name, u.last_name`;
+    
+    const friends = await db.any(friendsQuery, [req.session.user]);
+    
+    res.render('pages/friends', {
+      friends: friends
+    });
+  } catch (error) {
+    console.error("Error fetching friends:", error);
+    res.render('pages/friends', {
+      error: true,
+      message: "Failed to load friends list",
+      friends: []
+    });
+  }
+});
+
+app.post('/addfriend', async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+
+  const username = req.body.new_friend;
+  
+  try {
+    // checking if the user exists
+    const userQuery = await db.any('SELECT user_id FROM users WHERE username = $1', [username]);
+    
+    if (userQuery.length === 0) {
+      // if user not found, send error message
+      const friends = await db.any(`
+        SELECT u.first_name, u.last_name, u.username 
+        FROM users u
+        JOIN user_friends uf ON u.user_id = uf.friend_id
+        WHERE uf.user_id = $1`, [req.session.user]);
+      
+      return res.render('pages/friends', {
+        error: true,
+        message: "User not found",
+        friends: friends
+      });
+    }
+    
+    const friendId = userQuery[0].user_id;
+    
+    // don't let user add themselves as friend
+    if (friendId === req.session.user) {
+      const friends = await db.any(`
+        SELECT u.first_name, u.last_name, u.username 
+        FROM users u
+        JOIN user_friends uf ON u.user_id = uf.friend_id
+        WHERE uf.user_id = $1`, [req.session.user]);
+      
+      return res.render('pages/friends', {
+        error: true,
+        message: "You cannot add yourself as a friend",
+        friends: friends
+      });
+    }
+    
+    // check if already friends
+    const existingFriendship = await db.any('SELECT * FROM user_friends WHERE user_id = $1 AND friend_id = $2', 
+      [req.session.user, friendId]);
+    
+    if (existingFriendship.length > 0) {
+      const friends = await db.any(`
+        SELECT u.first_name, u.last_name, u.username 
+        FROM users u
+        JOIN user_friends uf ON u.user_id = uf.friend_id
+        WHERE uf.user_id = $1
+      `, [req.session.user]);
+      
+      return res.render('pages/friends', {
+        error: true,
+        message: "You are already friends with this user",
+        friends: friends
+      });
+    }
+    
+    // add to friend list
+    await db.tx(async t => {
+      await t.none('INSERT INTO user_friends (user_id, friend_id) VALUES ($1, $2)', [req.session.user, friendId]);
+      await t.none('INSERT INTO user_friends (user_id, friend_id) VALUES ($1, $2)', [friendId, req.session.user]);
+    });
+      
+    
+    // see updated friends list
+    res.redirect('/friends');
+    
+  } catch (error) {
+    console.error("Error adding friend:", error);
+    res.render('pages/friends', {
+      error: true,
+      message: "Failed to add friend",
+      friends: []
+    });
+  }
+});
+
+app.post('/friends/delete', async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+
+  const username = req.body.friend;
+  
+  try {
+    // get user id of friend you want to unfriend
+    const userQuery = await db.any('SELECT user_id FROM users WHERE username = $1', [username]);
+    
+    if (userQuery.length === 0) {
+      return res.redirect('/friends');
+    }
+    
+    const friendId = userQuery[0].user_id;
+
+    // removing the friendship
+    await db.tx(async t => {
+      await t.none('DELETE FROM user_friends WHERE user_id = $1 AND friend_id = $2', [req.session.user, friendId]);
+      await t.none('DELETE FROM user_friends WHERE user_id = $1 AND friend_id = $2', [friendId, req.session.user]);
+    });    
+    
+    res.redirect('/friends');
+    
+  } catch (error) {
+    console.error("Error removing friend:", error);
+    res.redirect('/friends');
+  }
+});
+
+app.get("/fuse", (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+  
+  res.render("pages/fuse",{friends:[{username:'Hanna'},{username:'Frankie'},{username:'Rodrigo'},{username:'Robert'},{username:'Hanna1'},{username:'Frankie1'},{username:'Rodrigo1'},{username:'Robert1'}, {username:'Hanna2'},{username:'Frankie2'},{username:'Rodrigo2'},{username:'Robert2'}], recipes: [
+    {recipe_id: 1,
+    title: 'Beef Pot Pies with Irish Cheddar Crust',
+    readyInMinutes: 45,
+    sourceURL: 'https://www.foodista.com/recipe/6FMXSM3N/beef-pot-pies-with-irish-cheddar-crust',
+    image: 'https://img.spoonacular.com/recipes/634660-312x231.jpg',
+    matchcount: '4'
+    },
+    {
+    recipe_id: 4,
+    title: 'Beef Lo Mein Noodles',
+    readyInMinutes: 45,
+    sourceURL: 'https://www.foodista.com/recipe/8QKG6BC8/beef-lo-mein',
+    image: 'https://img.spoonacular.com/recipes/634629-312x231.jpg',
+    matchcount: '1'
+    }
+    ]
+  })
+})
 
 app.get('/logout', (req, res) => {
   req.session.destroy(function(err) {
