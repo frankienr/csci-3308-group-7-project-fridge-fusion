@@ -630,6 +630,31 @@ app.post('/friends/delete', async (req, res) => {
   }
 });
 
+app.get("/fuse", (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+  
+  res.render("pages/fuse",{friends:[{username:'Hanna'},{username:'Frankie'},{username:'Rodrigo'},{username:'Robert'},{username:'Hanna1'},{username:'Frankie1'},{username:'Rodrigo1'},{username:'Robert1'}, {username:'Hanna2'},{username:'Frankie2'},{username:'Rodrigo2'},{username:'Robert2'}], recipes: [
+    {recipe_id: 1,
+    title: 'Beef Pot Pies with Irish Cheddar Crust',
+    readyInMinutes: 45,
+    sourceURL: 'https://www.foodista.com/recipe/6FMXSM3N/beef-pot-pies-with-irish-cheddar-crust',
+    image: 'https://img.spoonacular.com/recipes/634660-312x231.jpg',
+    matchcount: '4'
+    },
+    {
+    recipe_id: 4,
+    title: 'Beef Lo Mein Noodles',
+    readyInMinutes: 45,
+    sourceURL: 'https://www.foodista.com/recipe/8QKG6BC8/beef-lo-mein',
+    image: 'https://img.spoonacular.com/recipes/634629-312x231.jpg',
+    matchcount: '1'
+    }
+    ]
+  })
+})
+
 app.get('/logout', (req, res) => {
   req.session.destroy(function(err) {
     res.render('pages/logout');
