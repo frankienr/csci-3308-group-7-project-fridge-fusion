@@ -7,7 +7,7 @@
                     <div class="card-header bg-fridge text-white text-center py-3">
                         <h3>My ingredients</h3>
                     </div>
-                
+                    {{#if ingredients.length}}
                     <ul class="list-group">
                         {{#each ingredients}}
                         <!-- ingredients is a list holding each ingredient -->
@@ -20,6 +20,16 @@
                             </li>
                         {{/each}}
                     </ul>
+                    {{else}}
+                    <div class="card-body text-center">
+                        <h3 class="text-fridge-dark">
+                            No ingredients!
+                        </h3>
+                        <h4 class="text-fridge-dark">
+                            Start adding some <i class="bi bi-arrow-right"></i>
+                        </h4>
+                    </div>
+                    {{/if}}
                 </div>
             </div>
         
