@@ -1,0 +1,23 @@
+By Wednesday:
+* Hanna:
+	* To do: 
+		* get the friends to work on fuse page
+		* finish readMe
+* Robert:
+	* To do: 
+		* Pulling recipes based off friends
+		* Error handling for if someone wants to register but already has an account
+		* Add new ingredients bug
+* Rodrigo:
+	* To do:
+		* sorting on recipes
+		* add route to pull recipes (fetchspoonecularapi) based on ingredients user has. May need to slightly tweak function
+* Frankie:
+	* To do:
+		* on recipes page, if no recipes add a button
+		* add default photo
+		* find a friend to test
+
+* extra thing once everything else is done: post recipes you made for friends to see
+* Frankie: 
+	* to do: add those features to the pages
