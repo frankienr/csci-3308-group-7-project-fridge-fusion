@@ -18,7 +18,7 @@
                     </form>
                 </div>
             </div>
-            
+    {{#if recipes.length}}
     <ul class="list-group">
         {{#each recipes}}
         <!-- recipes is a list holding each recipe -->
@@ -27,7 +27,11 @@
         <div class="card mt-1 border-0">
             <div class="row g-0">
             <div class="col-auto">
-                <img src={{this.image}} class="img-fluid" alt={{this.title}}>
+                {{#if this.image}}
+                <img src={{this.image}} class="img-fluid" alt={{this.title}} style="max-height: 300px; max-width: 400px;">
+                {{else}}
+                <img src="https://thumbs.dreamstime.com/b/confused-cartoon-waiter-male-chef-vector-illustration-148311323.jpg" class="img-fluid" alt={{this.title}} style="max-height: 300px;">
+                {{/if}}
             </div>
             <div class="col">
                 <div class="card-body">
@@ -42,6 +46,15 @@
         </div>
         {{/each}}
     </ul>
+    {{else}}
+        <div class="card-body text-center">
+            <h3 class="text-fridge-dark">Oh no!</h3>
+            <h4 class="text-fridge-dark">Looks like we have no recipes for you <i class="bi bi-emoji-frown"></i></h4>
+            <form action="/pullrecipes" method="POST">
+                <button type="submit" class="btn btn-fridge">Pull new recipes</button>
+            </form>
+        </div>
+    {{/if}}
     </div>
     </div>
 
