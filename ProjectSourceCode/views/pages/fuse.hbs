@@ -8,59 +8,65 @@
                 <h3 class="text-fusion">Select friends to fuse with:</h3>
                 <form action="/fuse" method="POST">
                 {{#each friends}}
-                <div class="form-check form-check-inline p-1">
-                    <input type="checkbox" class="btn-check" id="{{this.username}}" autocomplete="off">
-                    <label class="btn btn-outline-fusion btn-sm" for="{{this.username}}">{{this.username}}</label>
-                </div>
+                  <div class="form-check form-check-inline p-1">
+                    <input type="checkbox" class="btn-check" id="friend-{{this.user_id}}" name="selected_friends" value="{{this.user_id}}" {{#if this.selected}}checked{{/if}} autocomplete="off">
+                    <label class="btn btn-outline-fusion btn-sm" for="friend-{{this.user_id}}">{{this.username}}</label>
+                  </div>
                 {{/each}}
                 <div class="text-center m-1">
-                <button class="btn text-black text-fusion btn-explode btn-lg" type="submit">FUSE</button>
+                  <button class="btn text-black text-fusion btn-explode btn-lg" type="submit">FUSE</button>
                 </div>
-                
-                </form>
+
+              </form>
             </div>
             
-    <ul class="list-group rounded-lg bg-transparent">
-        {{#each recipes}}
-        <!-- recipes is a list holding each recipe -->
-        <div class="card mt-1 border-0 bg-transparent text-white">
-            <div class="row g-0">
-            <div class="col-auto">
-                <img src={{this.image}} class="img-fluid" alt={{this.title}}>
-            </div>
-            <div class="col">
-                <div class="card-body">
-                <h5 class="card-title">{{this.title}}</h5>
-                <p class="card-text mb-1"><i class="bi-clock"></i>{{this.readyInMinutes}} minutes</p>
-                <p class="card-text mb-0"><strong>Ingredients: </strong>{{this.ingredients}}</p>
-                <a href={{this.sourceUrl}} class="stretched-link"></a>
-
-            </div>
-            </div>
-            </div>
-        </div>
-        {{/each}}
-    </ul>
-    </div>
-    </div>
-</div>
-</div>
-{{else}}
-<div class="row min-vh-100 justify-content-center align-items-center">
-    <div class="col-md-6">
-        <div class="card text-center p-4 bg-fusion">
-            <div class="card-body">
-                <div class="text-white mb-3">
-                    <i class="bi bi-emoji-frown-fill fs-1"></i>
+            <ul class="list-group rounded-lg bg-transparent">
+              {{#if recipes.length}}
+                {{#each recipes}}
+                <!-- recipes is a list holding each recipe -->
+                  <div class="card mt-1 border-0 bg-transparent text-white">
+                    <div class="row g-0">
+                      <div class="col-auto">
+                        <img src="{{this.image}}" class="img-fluid" alt="{{this.title}}">
+                      </div>
+                      <div class="col">
+                        <div class="card-body">
+                          <h5 class="card-title">{{this.title}}</h5>
+                          <p class="card-text mb-1"><i class="bi-clock"></i> {{this.readyInMinutes}} minutes</p>
+                          <p class="card-text mb-0"><strong>Ingredients: </strong>{{{this.ingredients}}}</p>
+                          <a href="{{this.sourceUrl}}" class="stretched-link"></a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {{/each}}
+              {{else}}
+                <div class="card mt-3 border-0 bg-fusion text-white">
+                  <div class="card-body text-center">
+                    <p class="mb-0">Select friends and click FUSE to see recipe recommendations!</p>
+                  </div>
                 </div>
-                <h2 class="mb-3 text-white">You don't have any friends yet.</h2>
-                
-                <div class="d-grid gap-3">
-                    <a class="btn btn-danger" href="/friends">Start adding some!</a>
-                </div>                    
-            </div>
+              {{/if}}
+            </ul>
+          </div>
         </div>
+      </div>
     </div>
-</div>
-{{/if}}
+  {{else}}
+    <div class="row min-vh-100 justify-content-center align-items-center">
+      <div class="col-md-6">
+        <div class="card text-center p-4 bg-fusion">
+          <div class="card-body">
+            <div class="text-white mb-3">
+              <i class="bi bi-emoji-frown-fill fs-1"></i>
+            </div>
+            <h2 class="mb-3 text-white">You don't have any friends yet.</h2>
+            <div class="d-grid gap-3">
+              <a class="btn btn-danger" href="/friends">Start adding some!</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  {{/if}}
 </div>

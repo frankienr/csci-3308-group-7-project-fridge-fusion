@@ -800,6 +800,137 @@ app.get("/fuse", async (req, res) => {
   }
 });
 
+app.post("/fuse", async (req, res) => {
+  if(!req.session.user){
+    return res.redirect('/login');
+  }
+  
+  try {
+    // getting selected friend id(s) from form
+    let selectedFriendIds = req.body.selected_friends;
+    
+    // I decided to include current user ID just so it's not empty
+    const userIds = [...selectedFriendIds, req.session.user.toString()];
+    
+    // get all ingredients from all selected user fridge
+    const ingredientQuery = `
+      SELECT DISTINCT ui.ingredient_id 
+      FROM user_ingredients ui
+      WHERE ui.user_id IN (${userIds.join(',')})`;
+    
+    const combinedIngredients = await db.any(ingredientQuery);
+    
+    if(combinedIngredients.length === 0) {
+      // no ingredients found in combined fridges
+      const friends = await db.any(friendsQuery, [req.session.user]);
+      
+      // marking selected fridges
+      friends.forEach(friend => {
+        friend.selected = selectedFriendIds.includes(friend.user_id.toString());
+      });
+      
+      return res.render("pages/fuse", {
+        friends: friends,
+        recipes: [],
+        message: "No ingredients found in combined fridges",
+        error: true
+      });
+    }
+    
+    const ingredientIds = combinedIngredients.map(ing => ing.ingredient_id);
+    
+    // match the combined ingredients which is similar to /recipes logic
+    const recipeQuery = `
+      SELECT recipes.recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+             COUNT(ri.ingredient_id) AS matchcount
+      FROM recipes 
+      JOIN recipe_ingredients ri ON ri.recipe_id = recipes.recipe_id
+      WHERE ri.ingredient_id IN (${ingredientIds.join(',')})
+      GROUP BY recipes.recipe_id
+      ORDER BY matchcount DESC
+      LIMIT 20`;
+    
+    const availableRecipes = await db.any(recipeQuery);
+    
+    let recipeArray = [];
+    
+    for(let recipeIndex in availableRecipes) {
+      let recipe = availableRecipes[recipeIndex];
+      
+      // get ingredients for recipe and mark which ones are available in combined fridges
+      let combinedIngredientNames = await db.any(`
+        SELECT ingredient_name 
+        FROM ingredients 
+        JOIN user_ingredients ON ingredients.ingredient_id = user_ingredients.ingredient_id 
+        WHERE user_ingredients.user_id IN (${userIds.join(',')})
+      `);
+      
+      // convert to array
+      let availableIngredients = combinedIngredientNames.map(ing => ing.ingredient_name);
+      
+      // get ingredients for recipe
+      let recipeIngredients = await db.any(`
+        SELECT ingredient_name 
+        FROM ingredients 
+        JOIN recipe_ingredients ON ingredients.ingredient_id = recipe_ingredients.ingredient_id 
+        WHERE recipe_ingredients.recipe_id = $1
+      `, [recipe.recipe_id]);
+      
+      // formatting and highlighting for available ingredients
+      let ingredientString = "";
+      
+      for(let i = 0; i < recipeIngredients.length; i++) {
+        let ingredient = recipeIngredients[i].ingredient_name;
+        let formatted = availableIngredients.includes(ingredient) ? 
+                        `<span class="text-fridge-dark">${ingredient}</span>` : 
+                        ingredient;
+        
+        if(ingredientString === "") {
+          ingredientString = formatted;
+        } else {
+          ingredientString += ", " + formatted;
+        }
+      }
+      
+      // create recipe object for template
+      let recipeData = {
+        "image": recipe.recipe_image,
+        "title": recipe.recipe_name,
+        "readyInMinutes": recipe.ready_time_minutes,
+        "sourceUrl": recipe.recipe_link,
+        "ingredients": ingredientString,
+        "matchcount": recipe.matchcount
+      };
+      
+      recipeArray.push(recipeData);
+    }
+    
+    // get friends again to keep the selection highlight
+    const friendsQuery = `
+      SELECT u.user_id, u.first_name, u.last_name, u.username 
+      FROM users u
+      JOIN user_friends uf ON u.user_id = uf.friend_id
+      WHERE uf.user_id = $1
+      ORDER BY u.first_name, u.last_name`;
+    
+    const friends = await db.any(friendsQuery, [req.session.user]);
+    
+    // mark friends
+    friends.forEach(friend => {
+      friend.selected = selectedFriendIds.includes(friend.user_id.toString());
+    });
+    
+    res.render("pages/fuse", {
+      friends: friends,
+      recipes: recipeArray
+    });
+    
+  } catch (error) {
+    console.error("Error during fusion:", error);
+    res.redirect("/fuse");
+  }
+});
+
 app.get('/logout', (req, res) => {
   req.session.destroy(function(err) {
     res.render('pages/logout');
