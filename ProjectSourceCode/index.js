@@ -268,14 +268,14 @@ app.get("/home", (req, res) => {
 })
 
 app.post('/fridge/add', async (req, res) => {
-  const new_ingredient = req.body.new_ingredient
+  const new_ingredient = req.body.new_ingredient.toLowerCase()
   console.log("new_ingredient", new_ingredient)
   // try{
     let getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
     console.log(getIngredientID)
     if(!getIngredientID[0]){
       // Ingredient does not already exist in database, search for it then try again
-      pullSpoonacularAPIByIngredient(new_ingredient)
+      await pullSpoonacularAPIByIngredient(new_ingredient)
       getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
       if(!getIngredientID[0]){
         // This means that even though recipes were pulled, that exact ingredient was not found. Should search in dropdown list
@@ -289,6 +289,15 @@ app.post('/fridge/add', async (req, res) => {
         })
         return
       }
+      const ingredientID = getIngredientID[0].ingredient_id
+      const linkIngredientWithUser = await db.none("INSERT INTO user_ingredients (user_id, ingredient_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [req.session.user, ingredientID])
+  
+      res.render("pages/fridge", {
+        "message": "Successfully found ingredient from external source, recipes for ingredient have been added to database.",
+        "ingredients": await getUserIngredients(req.session.user),
+        "seen_ingreds": await getAllIngredients()
+      })
+      return
     }
     // If execution gets this far, then at some point a correct ingredient ID was found. Insert into table
 
