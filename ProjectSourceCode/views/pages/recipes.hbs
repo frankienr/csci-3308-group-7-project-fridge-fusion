@@ -6,13 +6,12 @@
             <div class="card-header bg-fridge text-white text-center py-3">
                 <h3>Available recipes</h3>
                 <div class="d-flex justify-content-center align-items-center">
-                    <form class="d-flex align-items-center gap-2" action="/recipes/sort" method="POST">
+                    <form class="d-flex align-items-center gap-2" action="/recipes" method="GET">
                         <label for="sort_by" class="small mb-0 me-2 text-white">Sort by:</label>
-                        <select class="form-select form-select-sm bg-fridge border-white text-white" id="sort_by" style="width: auto; background-image: None">
-                            <option value="ingredients_desc">↓ Matched ingredients</option>
-                            <option value="ingredients_asc">↑ Matched ingredients</option>
-                            <option value="time_desc">↓ Cook time</option>
-                            <option value="time_asc">↑ Cook time</option>
+                        <select class="form-select form-select-sm bg-fridge border-white text-white" id="sort_by" name="sort_by" style="width: auto; background-image: None">
+                            <option {{#if ingredients_desc}} selected {{/if}} value="ingredients_desc">↓ Matched ingredients</option>
+                            <option {{#if missing_ingredients_asc}} selected {{/if}} value="missing_ingredients_asc">↑ Unmatched ingredients</option>
+                            <option {{#if time_desc}} selected {{/if}} value="time_desc">↓ Cook time</option>
                         </select>
                         <button class="btn btn-fridge border-white btn-sm" type="submit">Sort</button>
                     </form>

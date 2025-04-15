@@ -317,8 +317,38 @@ app.get('/recipes', async (req, res) => {
   if(!req.session.user){
     return res.redirect('/login');
   }
+  
+  let sortingExpression = ""
+  let sortStatus = req.query.sort_by
+  let recipeQuery = ""
 
-  const recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+  if(sortStatus == "ingredients_desc"){
+    sortingExpression = " ORDER BY matchCount DESC "
+  }
+  else if(sortStatus == "missing_ingredients_asc"){
+    recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+                      (SELECT COUNT(ingredient_id) FROM recipe_ingredients 
+                      WHERE ingredient_id NOT IN (SELECT ingredient_id FROM user_ingredients WHERE user_id=$1) 
+                      AND recipe_id=recipes.recipe_id) AS UnmatchCount FROM
+
+                      (recipes JOIN recipe_ingredients 
+                      ON recipe_ingredients.recipe_id=recipes.recipe_id) 
+                      JOIN user_ingredients ON user_ingredients.ingredient_id=recipe_ingredients.ingredient_id
+
+                      WHERE user_id=$1 
+                      GROUP BY recipes.recipe_id
+                      ORDER BY UnmatchCount ASC
+                      LIMIT 20;`
+  }
+  else if(sortStatus == "time_desc"){
+    sortingExpression = " ORDER BY recipes.ready_time_minutes ASC, matchCount DESC "
+  }
+  else{
+    sortStatus = "ingredients_desc"
+    sortingExpression = " ORDER BY matchCount DESC "
+  }
+  if(recipeQuery == ""){
+    recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
                       COUNT(recipe_ingredients.ingredient_id) AS matchCount FROM
                       (recipes JOIN recipe_ingredients 
                       ON recipe_ingredients.recipe_id=recipes.recipe_id) 
@@ -326,8 +356,9 @@ app.get('/recipes', async (req, res) => {
 
                       WHERE user_id=$1 
                       GROUP BY recipes.recipe_id
-                      ORDER BY matchCount DESC
+                      ${sortingExpression}
                       LIMIT 20;`
+  }
 
   // Right now the query limits to 20 pages, but pagination can be added.
   // Maybe add matchcount as a parameter, or highlight the ingredients they have.
@@ -360,7 +391,7 @@ app.get('/recipes', async (req, res) => {
     if(userIngredients != []){
       recipeIngredients = await db.any(`SELECT 
         CASE 
-          WHEN ingredient_name IN (${userIngredientsCSV}) THEN '<span class="text-fridge-dark">' || ingredient_name || '</span>'
+          WHEN ingredient_name IN (${userIngredientsCSV}) THEN '<span style="color:red">' || ingredient_name || '</span>'
           ELSE ingredient_name
         END ingredient_listing 
         FROM ingredients JOIN recipe_ingredients ON ingredients.ingredient_id=recipe_ingredients.ingredient_id WHERE recipe_ingredients.recipe_id=$1`, [recipe.recipe_id])
@@ -392,10 +423,14 @@ app.get('/recipes', async (req, res) => {
 
     recipeArray.push(recipeData)
   }
-  
-  res.render('pages/recipes', {
+
+  handlebarsParameters = {
     recipes: recipeArray
-  });
+  }
+
+  handlebarsParameters[sortStatus] = true
+  
+  res.render('pages/recipes', handlebarsParameters);
 });
 //What other pages will we have?
 
