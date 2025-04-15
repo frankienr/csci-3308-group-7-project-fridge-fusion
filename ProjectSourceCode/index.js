@@ -155,6 +155,18 @@ app.post('/register', async (req, res) => {
     const confirm_password = req.body.confirm_password;
     const email = req.body.email;
     
+    const checkUsernameExists = await db.any("SELECT TRUE FROM users WHERE username=$1", username)
+    console.log(checkUsernameExists)
+
+    if(checkUsernameExists[0]){
+      console.log("User alrady exists.")
+      res.render("pages/register", {
+        "message": "User already exists",
+        "error": true
+      })
+      return
+    }
+
     if (!username || !password || !confirm_password || !email || !first_name || !last_name) {
       res.render("pages/register", {
         "message": "Complete all required fields",
@@ -423,7 +435,7 @@ app.get('/recipes', async (req, res) => {
 
     recipeArray.push(recipeData)
   }
-
+  
   handlebarsParameters = {
     recipes: recipeArray
   }
