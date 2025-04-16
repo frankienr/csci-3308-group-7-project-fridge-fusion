@@ -87,4 +87,7 @@ The tests currently cover:
 
 
 ## 🌍 Deployed Application
-[ADD ONCE WE HAVE DEPLOYMENT]
+This application is deployed on Render, a cloud platform for hosting full-stack applications.
+
+You can access the live version of the app here:
+https://csci-3308-group-7-project-fridge-fusion.onrender.com/
