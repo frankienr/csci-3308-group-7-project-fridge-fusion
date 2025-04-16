@@ -155,6 +155,18 @@ app.post('/register', async (req, res) => {
     const confirm_password = req.body.confirm_password;
     const email = req.body.email;
     
+    const checkUsernameExists = await db.any("SELECT TRUE FROM users WHERE username=$1", username)
+    console.log(checkUsernameExists)
+
+    if(checkUsernameExists[0]){
+      console.log("User alrady exists.")
+      res.render("pages/register", {
+        "message": "User already exists",
+        "error": true
+      })
+      return
+    }
+
     if (!username || !password || !confirm_password || !email || !first_name || !last_name) {
       res.render("pages/register", {
         "message": "Complete all required fields",
@@ -256,14 +268,14 @@ app.get("/home", (req, res) => {
 })
 
 app.post('/fridge/add', async (req, res) => {
-  const new_ingredient = req.body.new_ingredient
+  const new_ingredient = req.body.new_ingredient.toLowerCase()
   console.log("new_ingredient", new_ingredient)
   // try{
     let getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
     console.log(getIngredientID)
     if(!getIngredientID[0]){
       // Ingredient does not already exist in database, search for it then try again
-      pullSpoonacularAPIByIngredient(new_ingredient)
+      await pullSpoonacularAPIByIngredient(new_ingredient)
       getIngredientID = await db.any("SELECT ingredient_id FROM ingredients WHERE ingredient_name=$1", [new_ingredient])
       if(!getIngredientID[0]){
         // This means that even though recipes were pulled, that exact ingredient was not found. Should search in dropdown list
@@ -277,6 +289,15 @@ app.post('/fridge/add', async (req, res) => {
         })
         return
       }
+      const ingredientID = getIngredientID[0].ingredient_id
+      const linkIngredientWithUser = await db.none("INSERT INTO user_ingredients (user_id, ingredient_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [req.session.user, ingredientID])
+  
+      res.render("pages/fridge", {
+        "message": "Successfully found ingredient from external source, recipes for ingredient have been added to database.",
+        "ingredients": await getUserIngredients(req.session.user),
+        "seen_ingreds": await getAllIngredients()
+      })
+      return
     }
     // If execution gets this far, then at some point a correct ingredient ID was found. Insert into table
 
@@ -317,8 +338,38 @@ app.get('/recipes', async (req, res) => {
   if(!req.session.user){
     return res.redirect('/login');
   }
+  
+  let sortingExpression = ""
+  let sortStatus = req.query.sort_by
+  let recipeQuery = ""
 
-  const recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+  if(sortStatus == "ingredients_desc"){
+    sortingExpression = " ORDER BY matchCount DESC "
+  }
+  else if(sortStatus == "missing_ingredients_asc"){
+    recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+                      (SELECT COUNT(ingredient_id) FROM recipe_ingredients 
+                      WHERE ingredient_id NOT IN (SELECT ingredient_id FROM user_ingredients WHERE user_id=$1) 
+                      AND recipe_id=recipes.recipe_id) AS UnmatchCount FROM
+
+                      (recipes JOIN recipe_ingredients 
+                      ON recipe_ingredients.recipe_id=recipes.recipe_id) 
+                      JOIN user_ingredients ON user_ingredients.ingredient_id=recipe_ingredients.ingredient_id
+
+                      WHERE user_id=$1 
+                      GROUP BY recipes.recipe_id
+                      ORDER BY UnmatchCount ASC
+                      LIMIT 20;`
+  }
+  else if(sortStatus == "time_desc"){
+    sortingExpression = " ORDER BY recipes.ready_time_minutes ASC, matchCount DESC "
+  }
+  else{
+    sortStatus = "ingredients_desc"
+    sortingExpression = " ORDER BY matchCount DESC "
+  }
+  if(recipeQuery == ""){
+    recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
                       COUNT(recipe_ingredients.ingredient_id) AS matchCount FROM
                       (recipes JOIN recipe_ingredients 
                       ON recipe_ingredients.recipe_id=recipes.recipe_id) 
@@ -326,8 +377,9 @@ app.get('/recipes', async (req, res) => {
 
                       WHERE user_id=$1 
                       GROUP BY recipes.recipe_id
-                      ORDER BY matchCount DESC
+                      ${sortingExpression}
                       LIMIT 20;`
+  }
 
   // Right now the query limits to 20 pages, but pagination can be added.
   // Maybe add matchcount as a parameter, or highlight the ingredients they have.
@@ -360,7 +412,7 @@ app.get('/recipes', async (req, res) => {
     if(userIngredients != []){
       recipeIngredients = await db.any(`SELECT 
         CASE 
-          WHEN ingredient_name IN (${userIngredientsCSV}) THEN '<span class="text-fridge-dark">' || ingredient_name || '</span>'
+          WHEN ingredient_name IN (${userIngredientsCSV}) THEN '<span style="color:red">' || ingredient_name || '</span>'
           ELSE ingredient_name
         END ingredient_listing 
         FROM ingredients JOIN recipe_ingredients ON ingredients.ingredient_id=recipe_ingredients.ingredient_id WHERE recipe_ingredients.recipe_id=$1`, [recipe.recipe_id])
@@ -393,9 +445,13 @@ app.get('/recipes', async (req, res) => {
     recipeArray.push(recipeData)
   }
   
-  res.render('pages/recipes', {
+  handlebarsParameters = {
     recipes: recipeArray
-  });
+  }
+
+  handlebarsParameters[sortStatus] = true
+  
+  res.render('pages/recipes', handlebarsParameters);
 });
 //What other pages will we have?
 
