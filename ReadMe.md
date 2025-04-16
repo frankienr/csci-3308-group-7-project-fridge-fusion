@@ -55,7 +55,36 @@ Go to http://localhost:3000/
 [ADD INSTRUCTIONS]
 
 ## 🧪 Running Tests
-[ADD ONCE WE HAVE TESTS]
+This project uses [Mocha](https://mochajs.org/) and [Chai](https://www.chaijs.com/) for testing backend functionality such as routes, authentication, views, and database logic.
+
+### 📦 Prerequisites
+Before running the tests, ensure you've installed all dependencies:
+```bash
+npm install
+```
+Also, make sure your development database is properly configured and running. If you're using Docker:
+
+```bash
+docker-compose up
+```
+
+### 🚀 Run the tests
+
+To execute all tests, use the following command:
+
+```bash
+npm run testandrun
+```
+
+### ✅ Test Coverage
+
+The tests currently cover:
+
+- User registration and login routes
+- Profile access (authenticated vs unauthenticated)
+- View rendering using Handlebars
+- Fridge and ingredient routes
+
 
 ## 🌍 Deployed Application
 [ADD ONCE WE HAVE DEPLOYMENT]
