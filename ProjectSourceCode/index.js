@@ -412,7 +412,7 @@ app.get('/recipes', async (req, res) => {
     if(userIngredients != []){
       recipeIngredients = await db.any(`SELECT 
         CASE 
-          WHEN ingredient_name IN (${userIngredientsCSV}) THEN '<span style="color:red">' || ingredient_name || '</span>'
+          WHEN ingredient_name IN (${userIngredientsCSV}) THEN '<b>' || ingredient_name || '</b>'
           ELSE ingredient_name
         END ingredient_listing 
         FROM ingredients JOIN recipe_ingredients ON ingredients.ingredient_id=recipe_ingredients.ingredient_id WHERE recipe_ingredients.recipe_id=$1`, [recipe.recipe_id])
@@ -938,7 +938,7 @@ app.post("/fuse", async (req, res) => {
       for(let i = 0; i < recipeIngredients.length; i++) {
         let ingredient = recipeIngredients[i].ingredient_name;
         let formatted = availableIngredients.includes(ingredient) ? 
-                        `<span class="text-fridge-dark">${ingredient}</span>` : 
+                        `<b>${ingredient}</b>` : 
                         ingredient;
         
         if(ingredientString === "") {
