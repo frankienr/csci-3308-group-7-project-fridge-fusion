@@ -41,7 +41,8 @@ Before running the application, ensure you have the following installed on your 
 1. **Clone the Repository**  
    ```sh
    git clone https://github.com/frankienr/csci-3308-group-7-project-fridge-fusion.git
-   cd fridge-fusion```
+   cd csci-3308-group-7-project-fridge-fusion/ProjectSourceCode
+   ```
 
 2. **Install Dependencies**
     ```npm install```
