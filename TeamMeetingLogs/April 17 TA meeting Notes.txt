@@ -1,0 +1,2 @@
+﻿* Done: almost everything
+* To do: sort for fuse page, presentation, report
