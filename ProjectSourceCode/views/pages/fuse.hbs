@@ -16,12 +16,7 @@
                 <div class="text-center m-1">
                   <button class="btn text-black text-fusion btn-explode btn-lg" type="submit">FUSE</button>
                 </div>
-              </form>
-            </div>
-            
-            <ul class="list-group rounded-lg bg-transparent">
-              <div class="d-flex justify-content-center align-items-center py-2">
-                <form class="d-flex align-items-center gap-2" action="/fuse" method="GET">
+                  <div class="d-flex justify-content-center align-items-center py-2">
                     <label for="sort_by" class="small mb-0 me-2 btn-outline-fusion">Sort by:</label>
                     <select class="form-select form-select-sm bg-transparent btn-outline-fusion" id="sort_by" name="sort_by" style="width: auto; background-image: None">
                         <option {{#if ingredients_desc}} selected {{/if}} value="ingredients_desc">↓ Matched ingredients</option>
@@ -29,8 +24,14 @@
                         <option {{#if time_desc}} selected {{/if}} value="time_desc">↓ Cook time</option>
                     </select>
                     <button class="btn btn-outline-fusion btn-sm" type="submit">Sort</button>
+                  </div>
+
+              </form>
+            </div>
+            
+            <ul class="list-group rounded-lg bg-transparent">
+                <form class="d-flex align-items-center gap-2" action="/fuse" method="GET">
                 </form>
-              </div>
               {{#if recipes.length}}
                 {{#each recipes}}
                 <!-- recipes is a list holding each recipe -->
