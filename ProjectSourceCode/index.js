@@ -860,6 +860,8 @@ app.post("/fuse", async (req, res) => {
   if(!req.session.user){
     return res.redirect('/login');
   }
+
+  
   
   try {
     // getting selected friend id(s) from form
@@ -896,15 +898,60 @@ app.post("/fuse", async (req, res) => {
     const ingredientIds = combinedIngredients.map(ing => ing.ingredient_id);
     
     // match the combined ingredients which is similar to /recipes logic
-    const recipeQuery = `
-      SELECT recipes.recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
-             COUNT(ri.ingredient_id) AS matchcount
-      FROM recipes 
-      JOIN recipe_ingredients ri ON ri.recipe_id = recipes.recipe_id
-      WHERE ri.ingredient_id IN (${ingredientIds.join(',')})
-      GROUP BY recipes.recipe_id
-      ORDER BY matchcount DESC
-      LIMIT 20`;
+    // let recipeQuery = `
+    //   SELECT recipes.recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+    //          COUNT(ri.ingredient_id) AS matchcount
+    //   FROM recipes 
+    //   JOIN recipe_ingredients ri ON ri.recipe_id = recipes.recipe_id
+    //   WHERE ri.ingredient_id IN (${ingredientIds.join(',')})
+    //   GROUP BY recipes.recipe_id
+    //   ORDER BY matchcount DESC
+    //   LIMIT 20`;
+
+
+        
+    let sortingExpression = ""
+    let sortStatus = req.body.sort_by
+    let recipeQuery = ""
+
+    console.log("sort_by", sortStatus)
+  
+    if(sortStatus == "ingredients_desc"){
+      sortingExpression = " ORDER BY matchCount DESC "
+    }
+    else if(sortStatus == "missing_ingredients_asc"){
+      recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+                        (SELECT COUNT(ingredient_id) FROM recipe_ingredients 
+                        WHERE ingredient_id NOT IN (${ingredientIds.join(',')}) 
+                        AND recipe_id=recipes.recipe_id) AS UnmatchCount FROM
+  
+                        (recipes JOIN recipe_ingredients 
+                        ON recipe_ingredients.recipe_id=recipes.recipe_id) 
+  
+                        WHERE recipe_ingredients.ingredient_id IN (${ingredientIds.join(',')})
+                        GROUP BY recipes.recipe_id
+                        ORDER BY UnmatchCount ASC
+                        LIMIT 20;`
+    }
+    else if(sortStatus == "time_desc"){
+      sortingExpression = " ORDER BY recipes.ready_time_minutes ASC, matchCount DESC "
+    }
+    else{
+      sortStatus = "ingredients_desc"
+      sortingExpression = " ORDER BY matchCount DESC "
+    }
+    if(recipeQuery == ""){
+      recipeQuery = `SELECT recipes.recipe_id AS recipe_id, recipe_name, ready_time_minutes, recipe_link, recipe_image,
+                        COUNT(recipe_ingredients.ingredient_id) AS matchCount FROM
+                        (recipes JOIN recipe_ingredients 
+                        ON recipe_ingredients.recipe_id=recipes.recipe_id) 
+
+                        WHERE recipe_ingredients.ingredient_id IN (${ingredientIds.join(',')})
+                        GROUP BY recipes.recipe_id
+                        ${sortingExpression}
+                        LIMIT 20;`
+    }
+
     
     const availableRecipes = await db.any(recipeQuery);
     
@@ -955,7 +1002,6 @@ app.post("/fuse", async (req, res) => {
         "readyInMinutes": recipe.ready_time_minutes,
         "sourceUrl": recipe.recipe_link,
         "ingredients": ingredientString,
-        "matchcount": recipe.matchcount
       };
       
       recipeArray.push(recipeData);
@@ -976,10 +1022,14 @@ app.post("/fuse", async (req, res) => {
       friend.selected = selectedFriendIds.includes(friend.user_id.toString());
     });
     
-    res.render("pages/fuse", {
+    handlebarsParameters = {
       friends: friends,
       recipes: recipeArray
-    });
+    }
+
+    handlebarsParameters[req.body.sort_by] = true
+
+    res.render("pages/fuse", handlebarsParameters);
     
   } catch (error) {
     console.error("Error during fusion:", error);
